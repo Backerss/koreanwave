@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - โรงเรียนสตรีนครสวรรค์</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #003399;
+            --secondary-color: #FFD700;
+            --dark-blue: #002266;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-blue) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: var(--secondary-color);
+        }
+
+        .school-logo {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 1.5rem;
+            display: block;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #ddd;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 51, 153, 0.25);
+        }
+
+        .input-group-text {
+            background-color: transparent;
+            border-right: none;
+        }
+
+        .form-control {
+            border-left: none;
+        }
+
+        .btn-login {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-login:hover {
+            background-color: var(--dark-blue);
+            color: white;
+        }
+
+        .forgot-password {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .forgot-password:hover {
+            color: var(--dark-blue);
+        }
+
+        .alert {
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .loading-screen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: #002266;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- หน้าโหลด -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;"></div>
+        <p class="mt-3">กำลังโหลด...</p>
+    </div>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="login-container mx-auto">
+                    <img src="https://placehold.co/100x100" alt="โลโก้โรงเรียน" class="school-logo">
+                    <h4 class="text-center mb-4">เข้าสู่ระบบ</h4>
+                    <form id="loginForm">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input type="text" class="form-control" id="studentId" 
+                                   placeholder="รหัสนักเรียน" required
+                                   pattern="[0-9]{5}" 
+                                   title="กรุณากรอกรหัสนักเรียน 5 หลัก">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" class="form-control" id="password" 
+                                   placeholder="รหัสผ่าน" required
+                                   minlength="6">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <button type="submit" class="btn btn-login">
+                            <i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ
+                        </button>
+                    </form>
+                    <a href="#" class="forgot-password" id="forgotPassword">ลืมรหัสผ่าน?</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Custom JS -->
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(() => {
+                document.getElementById("loadingScreen").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+            }, 2000);
+        });
+    </script>
+    
+    <script>
+
+        
+
+        $(document).ready(function() {
+            // Toggle Password Visibility
+            $('#togglePassword').click(function() {
+                const passwordInput = $('#password');
+                const icon = $(this).find('i');
+                
+                if (passwordInput.attr('type') === 'password') {
+                    passwordInput.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    passwordInput.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Form Submission
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+                
+                const studentId = $('#studentId').val();
+                const password = $('#password').val();
+
+                // Validate Student ID format
+                if (!/^\d{5}$/.test(studentId)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'รหัสนักเรียนไม่ถูกต้อง',
+                        text: 'กรุณากรอกรหัสนักเรียน 5 หลัก',
+                        confirmButtonText: 'ตกลง',
+                        confirmButtonColor: '#003399'
+                    });
+                    return;
+                }
+
+                // Validate Password length
+                if (password.length < 6) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'รหัสผ่านไม่ถูกต้อง',
+                        text: 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร',
+                        confirmButtonText: 'ตกลง',
+                        confirmButtonColor: '#003399'
+                    });
+                    return;
+                }
+
+                // Show loading
+                Swal.fire({
+                    title: 'กำลังดำเนินการ',
+                    text: 'กรุณารอสักครู่...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Simulate API call (remove this in production)
+                setTimeout(() => {
+                    // Success simulation (you'll replace this with actual API call)
+                    if (studentId === "12345" && password === "password123") {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'เข้าสู่ระบบสำเร็จ',
+                            text: 'ยินดีต้อนรับเข้าสู่ระบบ',
+                            confirmButtonText: 'ตกลง',
+                            confirmButtonColor: '#003399'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Redirect to dashboard or home page
+                                window.location.href = '../index.html';
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เข้าสู่ระบบไม่สำเร็จ',
+                            text: 'รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง',
+                            confirmButtonText: 'ลองใหม่',
+                            confirmButtonColor: '#003399'
+                        });
+                    }
+                }, 1500);
+            });
+
+            // Forgot Password
+            $('#forgotPassword').click(function(e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: 'ลืมรหัสผ่าน',
+                    html: `
+                        <input type="text" id="recover-student-id" class="swal2-input" placeholder="รหัสนักเรียน">
+                        <input type="email" id="recover-email" class="swal2-input" placeholder="อีเมล">
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'ส่งข้อมูล',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: '#003399',
+                    cancelButtonColor: '#dc3545',
+                    preConfirm: () => {
+                        const studentId = $('#recover-student-id').val();
+                        const email = $('#recover-email').val();
+                        
+                        if (!studentId || !email) {
+                            Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบถ้วน');
+                            return false;
+                        }
+                        
+                        if (!/^\d{5}$/.test(studentId)) {
+                            Swal.showValidationMessage('รหัสนักเรียนไม่ถูกต้อง');
+                            return false;
+                        }
+                        
+                        if (!/\S+@\S+\.\S+/.test(email)) {
+                            Swal.showValidationMessage('อีเมลไม่ถูกต้อง');
+                            return false;
+                        }
+                        
+                        return { studentId, email };
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'ส่งข้อมูลสำเร็จ',
+                            text: 'กรุณาตรวจสอบอีเมลของท่าน',
+                            confirmButtonText: 'ตกลง',
+                            confirmButtonColor: '#003399'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

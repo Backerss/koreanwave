@@ -1,0 +1,252 @@
+/* Global Styles */
+:root {
+    --primary-color: #003399; /* น้ำเงินเข้ม */
+    --secondary-color: #FFD700; /* สีเหลือง */
+    --dark-blue: #002266;
+    --light-yellow: #FFF7CC;
+    --accent-blue: #004DC9;
+}
+
+body {
+    font-family: 'Sarabun', sans-serif;
+    overflow-x: hidden;
+    padding-top: 76px;
+}
+
+/* Navbar Styles */
+.navbar {
+    background-color: var(--primary-color) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: white !important;
+}
+
+.school-logo {
+    border-radius: 50%;
+    border: 2px solid var(--secondary-color);
+}
+
+.nav-link {
+    font-weight: 500;
+    color: rgba(255,255,255,0.9) !important;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--secondary-color) !important;
+}
+
+.btn-warning {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: var(--dark-blue);
+    font-weight: 500;
+}
+
+/* Hero Section */
+#hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-blue) 100%);
+    color: white;
+    padding: 100px 0;
+    position: relative;
+}
+
+#hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--secondary-color);
+}
+
+.hero-image {
+    position: relative;
+}
+
+.hero-image::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    bottom: 10px;
+    left: 10px;
+    border: 3px solid var(--secondary-color);
+    z-index: -1;
+    border-radius: 10px;
+}
+
+/* Announcement Section */
+#announcement {
+    background-color: var(--secondary-color);
+    color: var(--dark-blue);
+}
+
+#announcement i {
+    font-size: 1.5rem;
+}
+
+/* Feature Cards */
+.feature-card {
+    text-align: center;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--secondary-color);
+}
+
+.feature-card i {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+/* Course Cards */
+.course-card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.course-level {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--secondary-color);
+    color: var(--dark-blue);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.course-details {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+}
+
+.course-details li {
+    margin-bottom: 8px;
+    color: #666;
+}
+
+.course-details i {
+    color: var(--primary-color);
+    margin-right: 8px;
+}
+
+/* School Info Section */
+.school-features {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.school-features li {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.school-features i {
+    color: var(--primary-color);
+    margin-right: 10px;
+}
+
+/* Contact Form */
+.contact-form .form-control {
+    border: 1px solid #ddd;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+}
+
+.contact-info ul li {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.contact-info ul li i {
+    color: var(--primary-color);
+    margin-right: 10px;
+    width: 20px;
+}
+
+.social-links a {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.social-links a:hover {
+    color: var(--secondary-color);
+}
+
+/* Footer */
+footer {
+    background: var(--dark-blue) !important;
+}
+
+footer a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+footer a:hover {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #hero {
+        padding: 60px 0;
+        text-align: center;
+    }
+    
+    .hero-image {
+        margin-top: 30px;
+    }
+    
+    .feature-card {
+        margin-bottom: 20px;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feature-card, .course-card {
+    animation: fadeInUp 0.6s ease-out forwards;
+}

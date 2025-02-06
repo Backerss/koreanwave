@@ -1,0 +1,586 @@
+:root {
+    --primary-color: #003399;
+    --secondary-color: #FFD700;
+    --dark-blue: #002266;
+    --light-blue: #E6F3FF;
+    --sidebar-width: 250px;
+    --navbar-height: 60px;
+    --transition-speed: 0.3s;
+}
+
+body {
+    font-family: 'Sarabun', sans-serif;
+    background-color: #f5f6fa;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    background: var(--primary-color);
+    color: white;
+    transition: all var(--transition-speed);
+    z-index: 1000;
+}
+
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-header img.logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+.sidebar-header h5 {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+}
+
+.sidebar-menu li:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.sidebar-menu li.active {
+    background: var(--secondary-color);
+    color: var(--dark-blue);
+}
+
+.sidebar-menu li i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-menu li .badge {
+    margin-left: auto;
+}
+
+/* Top Navbar */
+.top-navbar {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    height: var(--navbar-height);
+    background: white;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 999;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+}
+
+#sidebarToggle {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-right: 15px;
+}
+
+.breadcrumb {
+    margin: 0;
+    font-weight: 500;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+}
+
+.notification-bell .badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 0.7rem;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-profile img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Main Content Area */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding-top: var(--navbar-height);
+    min-height: 100vh;
+}
+
+.content-area {
+    padding: 20px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: white;
+    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Stat Cards */
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-details h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.stat-details span {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Timeline */
+.timeline {
+    padding: 15px;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-left: 3px solid #eee;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.timeline-item.current {
+    border-left-color: var(--primary-color);
+    background: var(--light-blue);
+}
+
+.timeline-item .time {
+    width: 80px;
+    font-weight: 500;
+}
+
+.timeline-item .subject {
+    flex: 1;
+    font-weight: 500;
+}
+
+.timeline-item .details {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Notification List */
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: start;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    gap: 15px;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.unread {
+    background: var(--light-blue);
+}
+
+.notification-item .icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.notification-item .details p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.notification-item .details small {
+    color: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        margin-top: var(--navbar-height);
+        transform: translateX(-100%);
+        z-index: 1;
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .top-navbar {
+        left: 0;
+    }
+
+    .user-info {
+        display: none;
+    }
+}
+
+/* Page Transitions */
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+
+/* Course Progress Styles */
+.course-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.progress-item {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+}
+
+.progress-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.subject-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.subject-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.progress-stats {
+    text-align: right;
+}
+
+.progress-percentage {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-right: 0.5rem;
+}
+
+.progress-fraction {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+
+
+
+.progress-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+.next-lesson {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+@keyframes progress-bar-stripes {
+    0% { background-position-x: 1rem; }
+}
+
+/* Hover Effects */
+.progress-item:hover .progress-bar {
+    filter: brightness(1.1);
+}
+
+/* สำหรับหน้าจอเดสก์ท็อป (min-width: 769px) */
+@media (min-width: 769px) {
+    /* Sidebar เปิดอยู่เป็นค่าเริ่มต้น */
+    .sidebar {
+        transform: translateX(0);
+    }
+    /* เมื่อคลิก toggle (เพิ่มคลาส active) ให้เลื่อน sidebar ออกไป */
+    .sidebar.active {
+        transform: translateX(-100%);
+    }
+    
+    /* กำหนด transition ของ main content เพื่อให้มีแอนิเมชันขณะเปลี่ยนแปลง */
+    .main-content {
+        transition: margin-left var(--transition-speed);
+        /* เมื่อ sidebar เปิดอยู่ ให้เว้นระยะห่างด้านซ้ายเท่ากับความกว้าง sidebar */
+        margin-left: var(--sidebar-width);
+    }
+    /* เมื่อ sidebar ถูกซ่อน (เพิ่มคลาส sidebar-hidden ให้ main-content) ให้ margin-left เป็น 0 */
+    .main-content.sidebar-hidden {
+        margin-left: 0;
+    }
+
+    #sidebarToggle{
+        display: none;
+    }
+    
+    /* เมื่อ sidebar ถูกซ่อน ให้ top-navbar ขยายเต็มหน้าจอ (left: 0) */
+    .top-navbar.sidebar-hidden {
+        left: 100%;
+    }
+}
+
+/* Modern Progress Bar Styles */
+.progress.progress-lg {
+    height: 12px;
+    background: #f0f2f5;
+    border-radius: 20px;
+    padding: 3px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+    margin: 0.8rem 0;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Base Progress Bar */
+.progress-bar {
+    border-radius: 20px;
+    background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 20px 20px;
+    transition: width 1s ease-in-out;
+    position: relative;
+}
+
+/* Custom Colors for Different Subjects */
+.progress-bar.bg-success {
+    background-color: #00c853;
+    background-image: linear-gradient(
+        45deg,
+        #00e676 25%,
+        #00c853 25%,
+        #00c853 50%,
+        #00e676 50%,
+        #00e676 75%,
+        #00c853 75%,
+        #00c853
+    );
+    box-shadow: 0 0 10px rgba(0, 200, 83, 0.3);
+}
+
+.progress-bar.bg-primary {
+    background-color: #2196f3;
+    background-image: linear-gradient(
+        45deg,
+        #42a5f5 25%,
+        #2196f3 25%,
+        #2196f3 50%,
+        #42a5f5 50%,
+        #42a5f5 75%,
+        #2196f3 75%,
+        #2196f3
+    );
+    box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+}
+
+.progress-bar.bg-warning {
+    background-color: #ffc107;
+    background-image: linear-gradient(
+        45deg,
+        #ffca28 25%,
+        #ffc107 25%,
+        #ffc107 50%,
+        #ffca28 50%,
+        #ffca28 75%,
+        #ffc107 75%,
+        #ffc107
+    );
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+}
+
+/* Animated Gradient Effect */
+.progress-bar-animated {
+    animation: progress-bar-stripes 1.5s linear infinite, glow 2s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes progress-bar-stripes {
+    0% { background-position: 0 0; }
+    100% { background-position: 20px 0; }
+}
+
+@keyframes glow {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
+    100% { filter: brightness(1); }
+}
+
+/* Hover Effect */
+.progress-item:hover .progress-bar {
+    animation-play-state: paused;
+    filter: brightness(1.1);
+    transform: scaleY(1.1);
+    transition: all 0.3s ease;
+}
+
+/* Add shine effect */
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: shine 2s infinite;
+}
+
+@keyframes shine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
