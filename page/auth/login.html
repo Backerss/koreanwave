@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -106,6 +107,7 @@
             border-radius: 8px;
             font-size: 0.9rem;
         }
+
         .loading-screen {
             position: fixed;
             width: 100%;
@@ -118,9 +120,9 @@
             z-index: 9999;
             color: white;
         }
-
     </style>
 </head>
+
 <body>
 
     <!-- หน้าโหลด -->
@@ -132,26 +134,22 @@
         <div class="row justify-content-center">
             <div class="col-12">
                 <div class="login-container mx-auto">
-                    <img src="https://placehold.co/100x100" alt="โลโก้โรงเรียน" class="school-logo">
+                    <img src="https://sns.electivecourses.net/data/img/logo.png" alt="โลโก้โรงเรียน"
+                        class="school-logo">
                     <h4 class="text-center mb-4">เข้าสู่ระบบ</h4>
                     <form id="loginForm">
                         <div class="input-group mb-3">
                             <span class="input-group-text">
                                 <i class="fas fa-user"></i>
                             </span>
-                            <input type="text" class="form-control" id="studentId" 
-                                   placeholder="รหัสนักเรียน" required
-                                   pattern="[0-9]{5}" 
-                                   title="กรุณากรอกรหัสนักเรียน 5 หลัก">
+                            <input type="text" class="form-control" id="studentId" placeholder="รหัสนักเรียน" required>
                         </div>
 
                         <div class="input-group mb-3">
                             <span class="input-group-text">
                                 <i class="fas fa-lock"></i>
                             </span>
-                            <input type="password" class="form-control" id="password" 
-                                   placeholder="รหัสผ่าน" required
-                                   minlength="6">
+                            <input type="password" class="form-control" id="password" placeholder="รหัสผ่าน" required>
                             <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -176,153 +174,103 @@
     <!-- Custom JS -->
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             setTimeout(() => {
                 document.getElementById("loadingScreen").style.display = "none";
-                document.getElementById("mainContent").style.display = "block";
             }, 2000);
         });
     </script>
-    
+
     <script>
 
-        
 
-        $(document).ready(function() {
-            // Toggle Password Visibility
-            $('#togglePassword').click(function() {
-                const passwordInput = $('#password');
-                const icon = $(this).find('i');
-                
-                if (passwordInput.attr('type') === 'password') {
-                    passwordInput.attr('type', 'text');
-                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
-                } else {
-                    passwordInput.attr('type', 'password');
-                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
-                }
-            });
+        // Toggle Password Visibility
+        $('#togglePassword').click(function () {
+            const passwordInput = $('#password');
+            const icon = $(this).find('i');
 
-            // Form Submission
-            $('#loginForm').submit(function(e) {
-                e.preventDefault();
-                
-                const studentId = $('#studentId').val();
-                const password = $('#password').val();
+            if (passwordInput.attr('type') === 'password') {
+                passwordInput.attr('type', 'text');
+                icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            } else {
+                passwordInput.attr('type', 'password');
+                icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            }
+        });
 
-                // Validate Student ID format
-                if (!/^\d{5}$/.test(studentId)) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'รหัสนักเรียนไม่ถูกต้อง',
-                        text: 'กรุณากรอกรหัสนักเรียน 5 หลัก',
-                        confirmButtonText: 'ตกลง',
-                        confirmButtonColor: '#003399'
-                    });
-                    return;
-                }
+        // Form Submission
+        $('#loginForm').submit(function (e) {
+            e.preventDefault();
 
-                // Validate Password length
-                if (password.length < 6) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'รหัสผ่านไม่ถูกต้อง',
-                        text: 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร',
-                        confirmButtonText: 'ตกลง',
-                        confirmButtonColor: '#003399'
-                    });
-                    return;
-                }
+            const studentId = $('#studentId').val();
+            const password = $('#password').val();
 
-                // Show loading
+            if (studentId === '' || password === '') {
                 Swal.fire({
-                    title: 'กำลังดำเนินการ',
-                    text: 'กรุณารอสักครู่...',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    showConfirmButton: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
+                    icon: 'warning',
+                    title: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+                    text: 'กรุณากรอกรหัสนักเรียนและรหัสผ่าน',
+                    confirmButtonText: 'ตกลง'
                 });
+                return;
+            }
 
-                // Simulate API call (remove this in production)
-                setTimeout(() => {
-                    // Success simulation (you'll replace this with actual API call)
-                    if (studentId === "12345" && password === "password123") {
+            else if (studentId.length !== 5) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'รหัสนักเรียนไม่ถูกต้อง',
+                    text: 'กรุณากรอกรหัสนักเรียน 5 หลัก',
+                    confirmButtonText: 'ตกลง'
+                });
+                return;
+            }
+
+            else if (password.length != studentId.length) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'รหัสผ่านไม่ถูกต้อง',
+                    text: 'กรุณากรอกรหัสผ่านให้ถูกต้อง',
+                    confirmButtonText: 'ตกลง'
+                });
+                return;
+            }
+
+            $.ajax({
+                url: '../../system/checklogin.php',
+                type: 'POST',
+                data: {
+                    studentId: studentId,
+                    password: password
+                },
+
+                success: function (response) {
+                    if (response === 'success') {
                         Swal.fire({
                             icon: 'success',
                             title: 'เข้าสู่ระบบสำเร็จ',
-                            text: 'ยินดีต้อนรับเข้าสู่ระบบ',
-                            confirmButtonText: 'ตกลง',
-                            confirmButtonColor: '#003399'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                // Redirect to dashboard or home page
-                                window.location.href = '../index.html';
-                            }
+                            text: 'กำลังเปลี่ยนหน้า...',
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            window.location.href = 'index.php';
                         });
                     } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'เข้าสู่ระบบไม่สำเร็จ',
                             text: 'รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง',
-                            confirmButtonText: 'ลองใหม่',
-                            confirmButtonColor: '#003399'
+                            confirmButtonText: 'ตกลง'
                         });
-                    }
-                }, 1500);
-            });
 
-            // Forgot Password
-            $('#forgotPassword').click(function(e) {
-                e.preventDefault();
-                
-                Swal.fire({
-                    title: 'ลืมรหัสผ่าน',
-                    html: `
-                        <input type="text" id="recover-student-id" class="swal2-input" placeholder="รหัสนักเรียน">
-                        <input type="email" id="recover-email" class="swal2-input" placeholder="อีเมล">
-                    `,
-                    showCancelButton: true,
-                    confirmButtonText: 'ส่งข้อมูล',
-                    cancelButtonText: 'ยกเลิก',
-                    confirmButtonColor: '#003399',
-                    cancelButtonColor: '#dc3545',
-                    preConfirm: () => {
-                        const studentId = $('#recover-student-id').val();
-                        const email = $('#recover-email').val();
-                        
-                        if (!studentId || !email) {
-                            Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบถ้วน');
-                            return false;
-                        }
-                        
-                        if (!/^\d{5}$/.test(studentId)) {
-                            Swal.showValidationMessage('รหัสนักเรียนไม่ถูกต้อง');
-                            return false;
-                        }
-                        
-                        if (!/\S+@\S+\.\S+/.test(email)) {
-                            Swal.showValidationMessage('อีเมลไม่ถูกต้อง');
-                            return false;
-                        }
-                        
-                        return { studentId, email };
+                        console.log(response);
                     }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'ส่งข้อมูลสำเร็จ',
-                            text: 'กรุณาตรวจสอบอีเมลของท่าน',
-                            confirmButtonText: 'ตกลง',
-                            confirmButtonColor: '#003399'
-                        });
-                    }
-                });
-            });
+                }
+               
+            })
+
         });
+
     </script>
 </body>
+
 </html>
