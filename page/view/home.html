@@ -15,6 +15,7 @@
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="../../css/home.css">
+    <link rel="stylesheet" href="../../css/gradesPage.css">
 </head>
 
 <body>
@@ -44,6 +45,15 @@
             <li data-page="settings">
                 <i class="fas fa-cog"></i>
                 <span>ตั้งค่า</span>
+            </li>
+            <hr>
+            <li data-page="users">
+                <i class="fas fa-users"></i>
+                <span>จัดการผู้ใช้</span>
+            </li>
+            <li data-page="courses">
+                <i class="fas fa-book"></i>
+                <span>จัดการคอร์ส</span>
             </li>
         </ul>
     </div>
@@ -77,7 +87,8 @@
                         </button>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#profile"><i class="fas fa-user"></i> โปรไฟล์</a></li>
-                            <li data-page="profile"><a class="dropdown-item" href="#settings"><i class="fas fa-cog"></i> ตั้งค่า</a></li>
+                            <li data-page="profile"><a class="dropdown-item" href="#settings"><i class="fas fa-cog"></i>
+                                    ตั้งค่า</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
@@ -432,12 +443,9 @@
                     </div>
                 </div>
             </div>
-            <div class="page" id="schedulePage">
-                <!-- Schedule content here -->
-            </div>
             <!-- Add other pages as needed -->
             <!-- หน้าเรียนบทเรียนแบบเป็นหน้าต่างเรียนเลย -->
-            <div class="page active" id="lessonPage">
+            <div class="page" id="lessonPage">
                 <link rel="stylesheet" href="../../css/lessonpage.css">
                 <div class="lesson-container">
                     <div class="row">
@@ -667,10 +675,8 @@
                 </div>
             </div>
             <!-- หน้า ทำแบบทดสอบก่อนเรียน-->
-
-
             <!-- หน้าจัดการผู้ใช้ -->
-            <div class="page" id="userManagementPage">
+            <div class="page" id="usersPage">
                 <div class="container-fluid">
                     <!-- Page Header -->
                     <div class="page-header">
@@ -824,70 +830,320 @@
                 <div class="modal fade" id="editUserModal" tabindex="-1">
                     <!-- Similar structure to Add User Modal with pre-filled values -->
                 </div>
-
-                <style>
-                    .page-header {
-                        margin-bottom: 1.5rem;
-                    }
-
-                    .page-title {
-                        margin: 0;
-                        color: var(--primary-color);
-                    }
-
-                    .card {
-                        border-radius: 10px;
-                        border: none;
-                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                        margin-bottom: 1.5rem;
-                    }
-
-                    .table th {
-                        background-color: #f8f9fa;
-                        border-bottom: 2px solid #dee2e6;
-                    }
-
-                    .action-btns {
-                        display: flex;
-                        gap: 0.5rem;
-                    }
-
-                    .action-btns .btn {
-                        padding: 0.25rem 0.5rem;
-                        font-size: 0.875rem;
-                    }
-
-                    .form-control,
-                    .form-select {
-                        border-radius: 8px;
-                        border: 1px solid #dee2e6;
-                        padding: 0.5rem 0.75rem;
-                    }
-
-                    .form-control:focus,
-                    .form-select:focus {
-                        border-color: var(--primary-color);
-                        box-shadow: 0 0 0 0.2rem rgba(0, 51, 153, 0.25);
-                    }
-
-                    .modal-content {
-                        border-radius: 10px;
-                    }
-
-                    .modal-header {
-                        background-color: var(--primary-color);
-                        color: white;
-                        border-radius: 10px 10px 0 0;
-                    }
-
-                    .modal-header .btn-close {
-                        filter: brightness(0) invert(1);
-                    }
-                </style>
             </div>
             <!-- หน้าจัดการผู้ใช้ -->
 
+            <!-- หน้าแสดงผลการเรียน -->
+            <div class="page grades-page" id="gradesPage">
+                <div class="container-fluid">
+                    <div class="page-header mb-4">
+                        <h3 class="page-title">ผลการเรียน</h3>
+                        <p class="text-muted">ภาคเรียนที่ 2/2567</p>
+                    </div>
+
+                    <!-- ตารางแสดงผลการเรียน -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">ผลการเรียนรายวิชา</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>รหัสวิชา</th>
+                                            <th>ชื่อวิชา</th>
+                                            <th>บทเรียนทั้งหมด</th>
+                                            <th>บทเรียนที่เรียนแล้ว</th>
+                                            <th>คะแนนสอบ</th>
+                                            <th>สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>ก30201</td>
+                                            <td>ภาษาเกาหลี 1</td>
+                                            <td>3 บท</td>
+                                            <td>2 บท</td>
+                                            <td>85/100</td>
+                                            <td><span class="badge bg-success">กำลังเรียน</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- รายละเอียดบทเรียน -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">รายละเอียดบทเรียน - ภาษาเกาหลี 1</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="lesson-list">
+                                <div class="lesson-item completed">
+                                    <div class="lesson-info">
+                                        <h6>บทที่ 1: การทักทายในภาษาเกาหลี</h6>
+                                        <p class="text-muted mb-0">เรียนรู้การทักทายพื้นฐานและการแนะนำตัว</p>
+                                    </div>
+                                    <div class="lesson-status">
+                                        <span class="badge bg-success">เรียนจบแล้ว</span>
+                                        <span class="score">คะแนน: 90/100</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-item completed">
+                                    <div class="lesson-info">
+                                        <h6>บทที่ 2: ตัวเลขและการนับ</h6>
+                                        <p class="text-muted mb-0">การนับแบบเกาหลีและการใช้ตัวเลข</p>
+                                    </div>
+                                    <div class="lesson-status">
+                                        <span class="badge bg-success">เรียนจบแล้ว</span>
+                                        <span class="score">คะแนน: 85/100</span>
+                                    </div>
+                                </div>
+                                <div class="lesson-item">
+                                    <div class="lesson-info">
+                                        <h6>บทที่ 3: การสนทนาในชีวิตประจำวัน</h6>
+                                        <p class="text-muted mb-0">บทสนทนาพื้นฐานที่ใช้ในชีวิตประจำวัน</p>
+                                    </div>
+                                    <div class="lesson-status">
+                                        <span class="badge bg-warning">ยังไม่ได้เรียน</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- หน้าแสดงผลการเรียน -->
+
+            <!--หน้าแสดงการเข้าเรียน-->
+            <div class="page" id="attendancePage">
+                <div class="container-fluid">
+                    <div class="page-header mb-4">
+                        <h3 class="page-title">บทเรียนที่เปิดสอน</h3>
+                        <p class="text-muted">วิชาภาษาเกาหลี 1</p>
+                    </div>
+
+                    <div class="row">
+                        <!-- บทเรียนที่ 3 -->
+                        <div class="col-md-4 mb-4">
+                            <div class="card lesson-card">
+                                <img src="https://placehold.co/400x200" class="card-img-top" alt="สนทนา">
+                                <div class="card-body">
+                                    <h5 class="card-title">บทที่ 3: การสนทนาในชีวิตประจำวัน</h5>
+                                    <p class="card-text">เรียนรู้บทสนทนาพื้นฐานที่ใช้ในชีวิตประจำวัน</p>
+                                    <div class="lesson-stats mb-3">
+                                        <span><i class="fas fa-clock"></i> 60 นาที</span>
+                                        <span><i class="fas fa-book-reader"></i> 5 หัวข้อ</span>
+                                    </div>
+                                    <button class="btn btn-primary w-100">
+                                        <i class="fas fa-play-circle"></i> เข้าเรียน
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="card lesson-card">
+                                <img src="https://placehold.co/400x200" class="card-img-top" alt="สนทนา">
+                                <div class="card-body">
+                                    <h5 class="card-title">บทที่ 3: การสนทนาในชีวิตประจำวัน</h5>
+                                    <p class="card-text">เรียนรู้บทสนทนาพื้นฐานที่ใช้ในชีวิตประจำวัน</p>
+                                    <div class="lesson-stats mb-3">
+                                        <span><i class="fas fa-clock"></i> 60 นาที</span>
+                                        <span><i class="fas fa-book-reader"></i> 5 หัวข้อ</span>
+                                    </div>
+                                    <button class="btn btn-primary w-100">
+                                        <i class="fas fa-play-circle"></i> เข้าเรียน
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="col-md-4 mb-4">
+                            <div class="card lesson-card">
+                                <img src="https://placehold.co/400x200" class="card-img-top" alt="สนทนา">
+                                <div class="card-body">
+                                    <h5 class="card-title">บทที่ 3: การสนทนาในชีวิตประจำวัน</h5>
+                                    <p class="card-text">เรียนรู้บทสนทนาพื้นฐานที่ใช้ในชีวิตประจำวัน</p>
+                                    <div class="lesson-stats mb-3">
+                                        <span><i class="fas fa-clock"></i> 60 นาที</span>
+                                        <span><i class="fas fa-book-reader"></i> 5 หัวข้อ</span>
+                                    </div>
+                                    <button class="btn btn-primary w-100">
+                                        <i class="fas fa-play-circle"></i> เข้าเรียน
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- สถิติการเรียน -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">สถิติการเรียน</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="stat-item">
+                                        <i class="fas fa-clock text-primary"></i>
+                                        <div>
+                                            <h6>เวลาเรียนทั้งหมด</h6>
+                                            <span>2 ชั่วโมง 15 นาที</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stat-item"></div>
+                                    <i class="fas fa-book-reader text-success"></i>
+                                    <div>
+                                        <h6>จำนวนบทเรียน</h6>
+                                        <span>3 บทเรียน</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-item">
+                                    <i class="fas fa-tasks text-info"></i>
+                                    <div>
+                                        <h6>จำนวนหัวข้อรวม</h6>
+                                        <span>12 หัวข้อ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--หน้าแสดงการเข้าเรียน-->
+
+
+            <!-- หน้าแสดงการสร้าง แก้ไข ลบ คอร์สและเนื้อหาภายในคอร์ส -->
+            <div class="page" id="coursesPage">
+                <div class="container-fluid">
+                    <!-- Course Management Header -->
+                    <div class="page-header mb-4">
+                        <div class="row align-items-center">
+                            <div class="col-sm-6">
+                                <h3 class="page-title">จัดการคอร์สเรียน</h3>
+                            </div>
+                            <div class="col-sm-6 text-end">
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                                    <i class="fas fa-plus"></i> สร้างคอร์สใหม่
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Course List -->
+                    <div class="row">
+                        <!-- Course Card -->
+                        <div class="col-md-4 mb-4">
+                            <div class="card course-card">
+                                <div class="card-header">
+                                    <div class="dropdown float-end">
+                                        <button class="btn btn-link" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                                    data-bs-target="#editCourseModal"><i class="fas fa-edit"></i>
+                                                    แก้ไข</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#"><i
+                                                        class="fas fa-trash"></i> ลบ</a></li>
+                                        </ul>
+                                    </div>
+                                    <h5 class="card-title mb-0">ภาษาเกาหลี 1</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">พื้นฐานภาษาเกาหลีสำหรับผู้เริ่มต้น</p>
+                                    <div class="course-stats mb-3">
+                                        <span><i class="fas fa-book"></i> 10 บทเรียน</span>
+                                        <span><i class="fas fa-users"></i> 30 นักเรียน</span>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm w-100" data-bs-toggle="modal"
+                                        data-bs-target="#manageLessonsModal">
+                                        จัดการบทเรียน
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Course Modal -->
+                <div class="modal fade" id="addCourseModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">สร้างคอร์สใหม่</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addCourseForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">ชื่อคอร์ส</label>
+                                        <input type="text" class="form-control" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">คำอธิบาย</label>
+                                        <textarea class="form-control" rows="3"></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">รูปภาพปก</label>
+                                        <input type="file" class="form-control">
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                <button type="button" class="btn btn-primary">บันทึก</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manage Lessons Modal -->
+                <div class="modal fade" id="manageLessonsModal">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">จัดการบทเรียน - ภาษาเกาหลี 1</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <button class="btn btn-success btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#addLessonModal">
+                                        <i class="fas fa-plus"></i> เพิ่มบทเรียน
+                                    </button>
+                                </div>
+                                <div class="lesson-list">
+                                    <div
+                                        class="lesson-item d-flex justify-content-between align-items-center p-3 border rounded mb-2">
+                                        <div>
+                                            <h6 class="mb-1">บทที่ 1: การทักทาย</h6>
+                                            <small class="text-muted">3 หัวข้อ | 45 นาที</small>
+                                        </div>
+                                        <div class="lesson-actions">
+                                            <button class="btn btn-sm btn-outline-primary me-2">แก้ไข</button>
+                                            <button class="btn btn-sm btn-outline-danger">ลบ</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- หน้าแสดงการสร้าง แก้ไข ลบ คอร์สและเนื้อหาภายในคอร์ส -->
+
         </div>
+
+    </div>
     </div>
 
     <!-- jQuery -->

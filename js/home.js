@@ -129,6 +129,75 @@ $(document).ready(function() {
 
     // Initialize Charts (if needed)
 
+    // Initialize Grade Charts
+    function initGradeCharts() {
+        // Grades Trend Chart
+        const trendCtx = document.getElementById('gradesTrendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['1/2566', '2/2566', '1/2567', '2/2567'],
+                datasets: [{
+                    label: 'เกรดเฉลี่ย',
+                    data: [3.45, 3.60, 3.75, 3.90],
+                    borderColor: '#003399',
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'แนวโน้มผลการเรียน'
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 4
+                    }
+                }
+            }
+        });
+
+        // Grade Distribution Chart
+        const distributionCtx = document.getElementById('gradeDistributionChart').getContext('2d');
+        new Chart(distributionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'F'],
+                datasets: [{
+                    label: 'จำนวนวิชา',
+                    data: [2, 3, 1, 1, 0, 0, 0, 0],
+                    backgroundColor: [
+                        '#28a745',
+                        '#20c997',
+                        '#17a2b8',
+                        '#ffc107',
+                        '#fd7e14',
+                        '#dc3545',
+                        '#6c757d',
+                        '#343a40'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    // Call initGradeCharts when the grades page is shown
+    $('.sidebar-menu li[data-page="grades"]').click(function() {
+        setTimeout(initGradeCharts, 100);
+    });
 
     // Handle Profile Image Upload
     $('#profileImageUpload').change(function() {
