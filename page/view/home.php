@@ -142,7 +142,6 @@ if (!isset($_SESSION['user_data'])) {
             <?php include('../inc/attendancePage.php') ?>
             <!--หน้าแสดงการเข้าเรียน-->
 
-
             <!-- หน้าแสดงการสร้าง แก้ไข ลบ คอร์สและเนื้อหาภายในคอร์ส -->
             <?php include('../inc/couresePage.php') ?>
             <!-- หน้าแสดงการสร้าง แก้ไข ลบ คอร์สและเนื้อหาภายในคอร์ส -->
@@ -150,6 +149,7 @@ if (!isset($_SESSION['user_data'])) {
         </div>
 
     </div>
+
     </div>
 
     <!-- jQuery -->
@@ -165,8 +165,6 @@ if (!isset($_SESSION['user_data'])) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom JS -->
     <script src="../../js/home.js"></script>
-
-
 </body>
 
 </html>
