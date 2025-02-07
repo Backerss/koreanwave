@@ -24,10 +24,10 @@ $(document).ready(function () {
                     // Update active states
                     $('.sidebar-menu li').removeClass('active');
                     $(this).addClass('active');
-    
+
                     // Update current page text
                     $('#currentPage').text($(this).find('span').text());
-    
+
                     // Show target page
                     $('.page').removeClass('active');
                     $(`#${targetPage}Page`).addClass('active');
@@ -44,7 +44,15 @@ $(document).ready(function () {
             $(`#${targetPage}Page`).addClass('active');
         }
     });
-    
+
+    // Add page refresh confirmation
+    window.addEventListener('beforeunload', function (e) {
+        if ($('#lessonPage').hasClass('active')) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
 
     // Initialize DataTables
     $('.table').DataTable({
@@ -236,22 +244,46 @@ $(document).ready(function () {
     });
 });
 
-// Add page refresh confirmation
-/*window.addEventListener('beforeunload', function(e) {
-    if ($('#lessonPage').hasClass('active')) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});*/
 
 
 function startLesson(lessonId) {
+    // Show confirmation dialog first
+    Swal.fire({
+        title: 'ยืนยันการเข้าบทเรียน',
+        text: 'คุณต้องการเข้าสู่บทเรียนนี้ใช่หรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ใช่, เข้าบทเรียน',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#003399',
+        cancelButtonColor: '#dc3545'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // User confirmed, proceed to load lesson
+            loadLessonContent(lessonId);
+        }
+    });
+}
+
+// Separate function for loading lesson content
+function loadLessonContent(lessonId) {
+    // Show loading state
+    Swal.fire({
+        title: 'กำลังโหลดบทเรียน...',
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false
+    });
+
     // Load lesson data via AJAX
     $.ajax({
         url: '../../system/getLesson.php',
         type: 'GET',
         data: { lessonId: lessonId },
-        success: function (response) {
+        success: function(response) {
             try {
                 const data = JSON.parse(response);
                 if (data.success) {
@@ -261,6 +293,9 @@ function startLesson(lessonId) {
                     // Switch to lesson page
                     $('.page').removeClass('active');
                     $('#lessonPage').addClass('active');
+
+                    // Close loading dialog
+                    Swal.close();
                 } else {
                     Swal.fire({
                         icon: 'error',
@@ -276,6 +311,13 @@ function startLesson(lessonId) {
                     text: 'ไม่สามารถโหลดข้อมูลบทเรียนได้'
                 });
             }
+        },
+        error: function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์'
+            });
         }
     });
 }
