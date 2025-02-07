@@ -225,16 +225,6 @@
                 return;
             }
 
-            else if (password.length != studentId.length) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'รหัสผ่านไม่ถูกต้อง',
-                    text: 'กรุณากรอกรหัสผ่านให้ถูกต้อง',
-                    confirmButtonText: 'ตกลง'
-                });
-                return;
-            }
-
             $.ajax({
                 url: '../../system/checklogin.php',
                 type: 'POST',
@@ -252,7 +242,7 @@
                             showConfirmButton: false,
                             timer: 1500
                         }).then(() => {
-                            window.location.href = 'index.php';
+                            window.location.href = '../view/home.php';
                         });
                     } else {
                         Swal.fire({

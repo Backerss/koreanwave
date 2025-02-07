@@ -13,9 +13,17 @@ if (isset($_POST['studentId']) && isset($_POST['password'])) {
     $stmt->execute();
 
     if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        if (password_verify($password, $row['password_hash'])) {
-            $_SESSION['student_id'] = $row['student_id'];
-            $_SESSION['name'] = $row['name'];
+        if($password == $row['student_id'])
+        {            
+            $_SESSION['user_data'] = [
+                'studentId' => $row['student_id'],
+                'name' => $row['first_name'] . " " . $row['last_name'],
+                'email' => $row['email'],
+                'role' => $row['role'],
+                'grade_level' => $row['grade_level'],
+                'classroom' => $row['classroom'],
+            ];
+
             echo "success";
         } else {
             echo "failed";
@@ -24,6 +32,7 @@ if (isset($_POST['studentId']) && isset($_POST['password'])) {
         echo "failed";
     }
 }
+
 
 
 

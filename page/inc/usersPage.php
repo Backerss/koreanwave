@@ -1,0 +1,155 @@
+<div class="page" id="usersPage">
+                <div class="container-fluid">
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <div class="row align-items-center">
+                            <div class="col-sm-6">
+                                <h3 class="page-title">จัดการข้อมูลผู้ใช้</h3>
+                            </div>
+                            <div class="col-sm-6 text-end">
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                    data-bs-target="#addUserModal">
+                                    <i class="fas fa-plus me-2"></i>เพิ่มผู้ใช้ใหม่
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters and Search -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" id="searchInput"
+                                        placeholder="ค้นหาชื่อ, รหัสนักเรียน...">
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="roleFilter">
+                                        <option value="">ทุกประเภทผู้ใช้</option>
+                                        <option value="student">นักเรียน</option>
+                                        <option value="teacher">ครู</option>
+                                        <option value="admin">ผู้ดูแลระบบ</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="gradeFilter">
+                                        <option value="">ทุกระดับชั้น</option>
+                                        <option value="1">ม.1</option>
+                                        <option value="2">ม.2</option>
+                                        <option value="3">ม.3</option>
+                                        <option value="4">ม.4</option>
+                                        <option value="5">ม.5</option>
+                                        <option value="6">ม.6</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="classFilter">
+                                        <option value="">ทุกห้องเรียน</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="usersTable">
+                                    <thead>
+                                        <tr>
+                                            <th>รหัสนักเรียน</th>
+                                            <th>ชื่อ-นามสกุล</th>
+                                            <th>ระดับชั้น/ห้อง</th>
+                                            <th>ประเภทผู้ใช้</th>
+                                            <th>วันที่สร้าง</th>
+                                            <th>วันที่อัปเดต</th>
+                                            <th>การดำเนินการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- ข้อมูลจะถูกเพิ่มด้วย DataTables -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add User Modal -->
+                <div class="modal fade" id="addUserModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">เพิ่มผู้ใช้ใหม่</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addUserForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">ประเภทผู้ใช้</label>
+                                        <select class="form-select" name="role" required>
+                                            <option value="student">นักเรียน</option>
+                                            <option value="teacher">ครู</option>
+                                            <option value="admin">ผู้ดูแลระบบ</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">รหัสนักเรียน</label>
+                                        <input type="text" class="form-control" name="student_id">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">ชื่อ</label>
+                                        <input type="text" class="form-control" name="first_name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">นามสกุล</label>
+                                        <input type="text" class="form-control" name="last_name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">ระดับชั้น</label>
+                                        <select class="form-select" name="grade_level">
+                                            <option value="">เลือกระดับชั้น</option>
+                                            <option value="1">ม.1</option>
+                                            <option value="2">ม.2</option>
+                                            <option value="3">ม.3</option>
+                                            <option value="4">ม.4</option>
+                                            <option value="5">ม.5</option>
+                                            <option value="6">ม.6</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">ห้อง</label>
+                                        <select class="form-select" name="classroom">
+                                            <option value="">เลือกห้อง</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">รหัสผ่าน</label>
+                                        <input type="password" class="form-control" name="password" required>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                <button type="button" class="btn btn-primary" id="saveUser">บันทึก</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit User Modal - Similar to Add User Modal -->
+                <div class="modal fade" id="editUserModal" tabindex="-1">
+                    <!-- Similar structure to Add User Modal with pre-filled values -->
+                </div>
+            </div>
