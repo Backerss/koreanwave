@@ -54,6 +54,17 @@
                                             <!-- Examples will be inserted here -->
                                         </ul>
                                     </div>
+
+                                    <!-- Add this inside the lesson-image-section div -->
+                                    <div class="lesson-navigation mt-3">
+                                        <button class="btn btn-primary btn-prev" disabled>
+                                            <i class="fas fa-chevron-left"></i> ย้อนกลับ
+                                        </button>
+                                        <span class="vocab-counter mx-3">1/1</span>
+                                        <button class="btn btn-primary btn-next" disabled>
+                                            ถัดไป <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

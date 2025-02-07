@@ -167,6 +167,7 @@ if (!isset($_SESSION['user_data'])) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom JS -->
     <script src="../../js/home.js"></script>
+    <script src="../../js/lesson.js"></script>
 </body>
 
 </html>

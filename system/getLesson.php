@@ -11,15 +11,16 @@ if(isset($_GET['lessonId'])) {
         $lesson = $lessonStmt->fetch();
 
         if($lesson) {
-            // Get vocabulary data
+            // Get all vocabulary for this lesson
             $vocabStmt = $db->prepare("SELECT * FROM vocabulary WHERE lesson_id = ?");
             $vocabStmt->execute([$lessonId]);
-            $vocabulary = $vocabStmt->fetch();
+            $vocabulary = $vocabStmt->fetchAll();
 
             echo json_encode([
                 'success' => true,
                 'lesson' => $lesson,
-                'vocabulary' => $vocabulary
+                'vocabulary' => $vocabulary,
+                'totalVocab' => count($vocabulary)
             ]);
         } else {
             echo json_encode([
