@@ -1,26 +1,50 @@
-$(document).ready(function() {
+$(document).ready(function () {
     // Sidebar Toggle
-    $('#sidebarToggle').click(function() {
+    $('#sidebarToggle').click(function () {
         $('.sidebar').toggleClass('active');
         $('.main-content').toggleClass('sidebar-hidden');
     });
 
 
     // Page Navigation
-    $('.sidebar-menu li').click(function() {
-        const targetPage = $(this).data('page');
-        
-        // Update active states
-        $('.sidebar-menu li').removeClass('active');
-        $(this).addClass('active');
-        
-        // Update current page text
-        $('#currentPage').text($(this).find('span').text());
-        
-        // Show target page
-        $('.page').removeClass('active');
-        $(`#${targetPage}Page`).addClass('active');
+    $('.sidebar-menu li').click(function (e) {
+        if ($('#lessonPage').hasClass('active')) {
+            e.preventDefault();
+            const targetPage = $(this).data('page');
+            Swal.fire({
+                title: 'ออกจากบทเรียน?',
+                text: 'คุณกำลังอยู่ในบทเรียน ต้องการออกจากบทเรียนใช่หรือไม่?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ใช่',
+                cancelButtonText: 'ไม่',
+                confirmButtonColor: '#dc3545'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Update active states
+                    $('.sidebar-menu li').removeClass('active');
+                    $(this).addClass('active');
+    
+                    // Update current page text
+                    $('#currentPage').text($(this).find('span').text());
+    
+                    // Show target page
+                    $('.page').removeClass('active');
+                    $(`#${targetPage}Page`).addClass('active');
+                    return;
+                }
+            });
+        } else {
+            // Original navigation code for other pages
+            const targetPage = $(this).data('page');
+            $('.sidebar-menu li').removeClass('active');
+            $(this).addClass('active');
+            $('#currentPage').text($(this).find('span').text());
+            $('.page').removeClass('active');
+            $(`#${targetPage}Page`).addClass('active');
+        }
     });
+    
 
     // Initialize DataTables
     $('.table').DataTable({
@@ -30,7 +54,7 @@ $(document).ready(function() {
     });
 
     // Notification Bell Click
-    $('.notification-bell').click(function() {
+    $('.notification-bell').click(function () {
         Swal.fire({
             title: 'การแจ้งเตือน',
             html: `
@@ -58,9 +82,9 @@ $(document).ready(function() {
     });
 
     // Logout Button
-    $('#logoutBtn').click(function(e) {
+    $('#logoutBtn').click(function (e) {
         e.preventDefault();
-        
+
         Swal.fire({
             title: 'ยืนยันการออกจากระบบ',
             text: 'คุณต้องการออกจากระบบใช่หรือไม่?',
@@ -77,8 +101,8 @@ $(document).ready(function() {
     });
 
     // Submit Assignment Button
-    $('.btn-primary').click(function() {
-        if($(this).text() === 'ส่งงาน') {
+    $('.btn-primary').click(function () {
+        if ($(this).text() === 'ส่งงาน') {
             Swal.fire({
                 title: 'อัพโหลดไฟล์งาน',
                 html: `
@@ -123,7 +147,7 @@ $(document).ready(function() {
         const dateTimeString = now.toLocaleDateString('th-TH', options);
         $('.datetime').text(dateTimeString);
     }
-    
+
     setInterval(updateClock, 1000);
     updateClock();
 
@@ -195,19 +219,97 @@ $(document).ready(function() {
     }
 
     // Call initGradeCharts when the grades page is shown
-    $('.sidebar-menu li[data-page="grades"]').click(function() {
+    $('.sidebar-menu li[data-page="grades"]').click(function () {
         setTimeout(initGradeCharts, 100);
     });
 
     // Handle Profile Image Upload
-    $('#profileImageUpload').change(function() {
+    $('#profileImageUpload').change(function () {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 $('#profileImage').attr('src', e.target.result);
             }
             reader.readAsDataURL(file);
         }
     });
 });
+
+// Add page refresh confirmation
+/*window.addEventListener('beforeunload', function(e) {
+    if ($('#lessonPage').hasClass('active')) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});*/
+
+
+function startLesson(lessonId) {
+    // Load lesson data via AJAX
+    $.ajax({
+        url: '../../system/getLesson.php',
+        type: 'GET',
+        data: { lessonId: lessonId },
+        success: function (response) {
+            try {
+                const data = JSON.parse(response);
+                if (data.success) {
+                    // Update lesson page content
+                    updateLessonPage(data.lesson, data.vocabulary);
+
+                    // Switch to lesson page
+                    $('.page').removeClass('active');
+                    $('#lessonPage').addClass('active');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ไม่พบข้อมูลบทเรียน',
+                        text: 'กรุณาลองใหม่อีกครั้ง'
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถโหลดข้อมูลบทเรียนได้'
+                });
+            }
+        }
+    });
+}
+
+function updateLessonPage(lesson, vocabulary) {
+    // Update lesson header
+    $('.lesson-header-card h3').text(`บทที่ ${lesson.id}: ${lesson.title}`);
+
+    // Update main image
+    $('.lesson-main-image').attr('src', vocabulary.img_url || 'https://placehold.co/800x600');
+
+    // Update content
+    $('.lesson-text-content h4').text(vocabulary.word_kr);
+    $('.lesson-text-content .lesson-description').text(vocabulary.deteil_word);
+
+    // Update pronunciation section
+    $('.pronunciation-item .korean').text(vocabulary.word_kr);
+    $('.pronunciation-item .romanized').text(vocabulary.word_en);
+
+    // Update examples
+    let examplesHtml = '';
+    if (vocabulary.example_one) {
+        examplesHtml += `
+            <li>
+                <span class="korean">${vocabulary.example_one}</span>
+            </li>
+        `;
+    }
+    if (vocabulary.example_two) {
+        examplesHtml += `
+            <li>
+                <span class="korean">${vocabulary.example_two}</span>
+            </li>
+        `;
+    }
+    $('.example-list').html(examplesHtml);
+}

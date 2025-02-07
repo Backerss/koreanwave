@@ -4,6 +4,8 @@
 <?php
 
 session_start();
+
+include_once("../../system/db.php");
 if (!isset($_SESSION['user_data'])) {
     header("Location: ../../page/auth/login.html");
     exit();

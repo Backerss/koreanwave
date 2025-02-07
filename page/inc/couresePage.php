@@ -1,3 +1,4 @@
+
 <div class="page" id="coursesPage">
     <div class="container-fluid">
         <!-- Course Management Header -->
