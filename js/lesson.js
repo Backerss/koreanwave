@@ -34,7 +34,6 @@ function startLesson(lessonId) {
 
 function loadLessonContent(lessonId) {
     window.currentVocabIndex = 0;
-    showLoadingScreen();
 
     $.ajax({
         url: '../../system/getLesson.php',
@@ -64,7 +63,6 @@ function handleLessonData(response) {
             setupVocabNavigation(data.vocabulary.length);
             $('.page').removeClass('active');
             $('#lessonPage').addClass('active');
-            setupNavigationGuard(); // เพิ่มการเรียกใช้ฟังก์ชัน
             Swal.close();
         } else {
             showError('ไม่พบข้อมูลบทเรียน', data.message);

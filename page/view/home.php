@@ -169,63 +169,7 @@ if (!isset($_SESSION['user_data'])) {
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>
-        $(document).ready(function() {
-            let currentScript = null;
-
-            function loadPageScript(pageName) {
-                // Remove previous script if exists
-                if (currentScript) {
-                    currentScript.remove();
-                    currentScript = null;
-                }
-
-                // Map pages to their script files
-                const scriptMap = {
-                    'profile': '../../js/profile.js',
-                    'courses': '../../js/courese.js',
-                    'examCreator': '../../js/exam-creator.js',
-                    'attendance': '../../js/lesson.js'
-                    // Add other page mappings here
-                };
-
-                // Load script if page has an associated script file
-                if (scriptMap[pageName]) {
-                    const script = document.createElement('script');
-                    script.src = scriptMap[pageName];
-                    script.type = 'text/javascript';
-                    currentScript = script;
-                    document.body.appendChild(script);
-                }
-            }
-
-            // Handle sidebar navigation
-            $('.sidebar-menu li').on('click', function(e) {
-                e.preventDefault();
-                const $element = $(this);
-                const targetPage = $element.data('page');
-
-                // Update UI
-                $('.sidebar-menu li').removeClass('active');
-                $element.addClass('active');
-                $('#currentPage').text($element.find('span').text() || '');
-                $('.page').removeClass('active');
-                
-                const $targetPage = $(`#${targetPage}Page`);
-                $targetPage.addClass('active');
-
-                // Load page-specific script
-                loadPageScript(targetPage);
-            });
-
-            // Load script for initial page if needed
-            const initialPage = $('.sidebar-menu li.active').data('page');
-            if (initialPage) {
-                loadPageScript(initialPage);
-            }
-        });
-    </script>
+    <script src="../../js/home.js"></script>
 </body>
 
 </html>

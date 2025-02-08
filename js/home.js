@@ -1,6 +1,14 @@
 $(document).ready(function () {
     let currentScript = null;
-    
+
+
+    // Sidebar Toggle
+    $('#sidebarToggle').on('click', function () {
+        console.log('Sidebar toggle clicked');
+        $('.sidebar').toggleClass('active');
+        $('.main-content').toggleClass('sidebar-hidden');
+    });
+
     try {
         // Function to load page-specific scripts
         function loadPageScript(pageName) {
@@ -13,7 +21,7 @@ $(document).ready(function () {
             // Map pages to their script files
             const scriptMap = {
                 'profile': '../../js/profile.js',
-                'courses': '../../js/courses.js',
+                'courses': '../../js/courese.js',
                 'examCreator': '../../js/exam-creator.js',
                 'attendance': '../../js/lesson.js'
                 // Add other page mappings here
@@ -35,22 +43,16 @@ $(document).ready(function () {
             $element.addClass('active');
             $('#currentPage').text($element.find('span').text() || '');
             $('.page').removeClass('active');
-            
+
             const $targetPage = $(`#${targetPage}Page`);
             $targetPage.addClass('active');
-            
+
             // Load page-specific script
             loadPageScript(targetPage);
-            
+
             // Trigger custom event for page change
             $(document).trigger('pageChanged', [targetPage + 'Page']);
         }
-
-        // Sidebar Toggle
-        $('#sidebarToggle').on('click', function () {
-            $('.sidebar').toggleClass('active');
-            $('.main-content').toggleClass('sidebar-hidden');
-        });
 
         // Page Navigation
         $('.sidebar-menu li').on('click', function (e) {
@@ -229,7 +231,7 @@ $(document).ready(function () {
     }
 
     // Cleanup function for page unload
-    $(window).on('unload', function() {
+    $(window).on('unload', function () {
         if (clockInterval) {
             clearInterval(clockInterval);
         }
@@ -240,11 +242,11 @@ $(document).ready(function () {
 });
 
 // Example for exam-creator.js
-(function() {
+(function () {
     // Initialize only if we're on the exam creator page
     if (!$('#examCreatorPage').hasClass('active')) return;
-    
+
     let questionCount = 0;
-    
+
     // Your existing exam creator code...
 })();
