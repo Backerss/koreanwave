@@ -168,6 +168,7 @@ if (!isset($_SESSION['user_data'])) {
     <!-- Custom JS -->
     <script src="../../js/home.js"></script>
     <script src="../../js/lesson.js"></script>
+    <script src="../../js/courese.js"></script>
     
 </body>
 
