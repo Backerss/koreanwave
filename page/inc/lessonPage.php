@@ -42,7 +42,7 @@
                                         <div class="pronunciation-item">
                                             <span class="korean"></span>
                                             <span class="romanized"></span>
-                                            <button class="btn btn-sm btn-play">
+                                            <button class="btn btn-sm btn-play" title="เล่นเสียง">
                                                 <i class="fas fa-play"></i>
                                             </button>
                                         </div>

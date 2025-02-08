@@ -46,12 +46,12 @@ $(document).ready(function () {
     });
 
     // Add page refresh confirmation
-    window.addEventListener('beforeunload', function (e) {
+    /*window.addEventListener('beforeunload', function (e) {
         if ($('#lessonPage').hasClass('active')) {
             e.preventDefault();
             e.returnValue = '';
         }
-    });
+    });*/
 
 
     // Initialize DataTables

@@ -21,54 +21,54 @@ function startLesson(lessonId) {
 
 function loadLessonContent(lessonId) {
     currentVocabIndex = 0;
-    
-    Swal.fire({
-        title: 'กำลังโหลดบทเรียน...',
-        didOpen: () => {
-            Swal.showLoading();
-        },
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        allowEnterKey: false
-    });
+    showLoadingScreen();
 
     $.ajax({
         url: '../../system/getLesson.php',
         type: 'GET',
         data: { lessonId: lessonId },
-        success: function(response) {
-            try {
-                const data = typeof response === 'string' ? JSON.parse(response) : response;
-                if (data.success) {
-                    vocabularyList = data.vocabulary;
-                    updateLessonPage(data.lesson, data.vocabulary[0], data.vocabulary.length);
-                    setupVocabNavigation(data.vocabulary.length);
-                    $('.page').removeClass('active');
-                    $('#lessonPage').addClass('active');
-                    Swal.close();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ไม่พบข้อมูลบทเรียน',
-                        text: data.message
-                    });
-                }
-            } catch (e) {
-                console.error(e);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถโหลดข้อมูลบทเรียนได้'
-                });
-            }
-        },
-        error: function() {
-            Swal.fire({
-                icon: 'error',
-                title: 'เกิดข้อผิดพลาด',
-                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์'
-            });
+        success: handleLessonData,
+        error: handleAjaxError
+    });
+}
+
+function showLoadingScreen() {
+    Swal.fire({
+        title: 'กำลังโหลดบทเรียน...',
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        focusConfirm: false
+    });
+}
+
+function handleLessonData(response) {
+    try {
+        const data = typeof response === 'string' ? JSON.parse(response) : response;
+        if (data.success) {
+            vocabularyList = data.vocabulary;
+            updateLessonPage(data.lesson, data.vocabulary[0], data.vocabulary.length);
+            setupVocabNavigation(data.vocabulary.length);
+            $('.page').removeClass('active');
+            $('#lessonPage').addClass('active');
+            Swal.close();
+        } else {
+            showError('ไม่พบข้อมูลบทเรียน', data.message);
         }
+    } catch (e) {
+        showError('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลบทเรียนได้');
+    }
+}
+
+function handleAjaxError() {
+    showError('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์');
+}
+
+function showError(title, text) {
+    Swal.fire({
+        icon: 'error',
+        title: title,
+        text: text
     });
 }
 
@@ -77,36 +77,68 @@ function setupAudioPlayer(audioUrl) {
         audioPlayer.pause();
         audioPlayer = null;
     }
-    audioPlayer = new Audio(`../../data/voice/${audioUrl}`);
+
+    try {
+        audioPlayer = new Audio(`../../data/voice/${audioUrl}`);
+        setupAudioEventListeners();
+    } catch (e) {
+        showError('เกิดข้อผิดพลาด', 'ไม่สามารถสร้างตัวเล่นเสียงได้');
+    }
+}
+
+function setupAudioEventListeners() {
+    audioPlayer.addEventListener('error', () => {
+        showError('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดไฟล์เสียงได้');
+    });
+
+    audioPlayer.addEventListener('play', () => {
+        $('.btn-play i').removeClass('fa-play').addClass('fa-pause');
+    });
+
+    audioPlayer.addEventListener('pause', updatePlayButtonToPlay);
+    audioPlayer.addEventListener('ended', updatePlayButtonToPlay);
+}
+
+function updatePlayButtonToPlay() {
+    $('.btn-play i').removeClass('fa-pause').addClass('fa-play');
 }
 
 function playVocabAudio() {
-    if (audioPlayer) {
-        audioPlayer.play();
+    if (!audioPlayer) return;
+
+    try {
+        if (audioPlayer.paused) {
+            audioPlayer.play().catch(() => {
+                showError('เกิดข้อผิดพลาด', 'ไม่สามารถเล่นเสียงได้');
+            });
+        } else {
+            audioPlayer.pause();
+        }
+    } catch (e) {
+        showError('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเล่นเสียง');
     }
 }
 
 function setupVocabNavigation(totalVocab) {
     const $prevBtn = $('.btn-prev');
-    const $nextBtn = $('..btn-next');
-    
+    const $nextBtn = $('.btn-next');
+    const $playBtn = $('.btn-play');
+
     updateNavigationState();
 
-    $prevBtn.off('click').on('click', function() {
-        if (currentVocabIndex > 0) {
-            currentVocabIndex--;
-            updateLessonPage(null, vocabularyList[currentVocabIndex], totalVocab);
-            updateNavigationState();
-        }
-    });
+    $playBtn.off('click').on('click', playVocabAudio);
+    $prevBtn.off('click').on('click', () => navigateVocab('prev', totalVocab));
+    $nextBtn.off('click').on('click', () => navigateVocab('next', totalVocab));
+}
 
-    $nextBtn.off('click').on('click', function() {
-        if (currentVocabIndex < totalVocab - 1) {
-            currentVocabIndex++;
-            updateLessonPage(null, vocabularyList[currentVocabIndex], totalVocab);
-            updateNavigationState();
-        }
-    });
+function navigateVocab(direction, totalVocab) {
+    if (direction === 'prev' && currentVocabIndex > 0) {
+        currentVocabIndex--;
+    } else if (direction === 'next' && currentVocabIndex < totalVocab - 1) {
+        currentVocabIndex++;
+    }
+    updateLessonPage(null, vocabularyList[currentVocabIndex], totalVocab);
+    updateNavigationState();
 }
 
 function updateNavigationState() {
@@ -131,11 +163,16 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
     $('.pronunciation-item .korean').text(vocabulary.word_kr);
     $('.pronunciation-item .romanized').text(vocabulary.word_en);
 
-    // Set up audio player
-    if (vocabulary.audio_url) {
+    // แก้ไขส่วนการตั้งค่า audio player
+    if (vocabulary.audio_url && vocabulary.audio_url.trim() !== '') {
         setupAudioPlayer(vocabulary.audio_url);
         $('.btn-play').show();
     } else {
+        console.log('No audio URL available'); // เพิ่ม log เพื่อดีบัก
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer = null;
+        }
         $('.btn-play').hide();
     }
 
