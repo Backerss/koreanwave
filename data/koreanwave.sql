@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 07, 2025 at 05:09 PM
+-- Generation Time: Feb 08, 2025 at 02:06 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -24,6 +24,20 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `exams`
+--
+
+CREATE TABLE `exams` (
+  `id` int NOT NULL,
+  `lesson_id` int NOT NULL,
+  `exam_type` enum('pretest','posttest') NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `lessons`
 --
 
@@ -34,12 +48,22 @@ CREATE TABLE `lessons` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- --------------------------------------------------------
+
 --
--- Dumping data for table `lessons`
+-- Table structure for table `questions`
 --
 
-INSERT INTO `lessons` (`id`, `title`, `category`, `created_at`) VALUES
-(1, 'ผัก', 'vegetables', '2025-02-07 06:28:19');
+CREATE TABLE `questions` (
+  `id` int NOT NULL,
+  `exam_id` int NOT NULL,
+  `question_text` text NOT NULL,
+  `option_a` text NOT NULL,
+  `option_b` text NOT NULL,
+  `option_c` text NOT NULL,
+  `option_d` text NOT NULL,
+  `correct_answer` char(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -63,21 +87,18 @@ CREATE TABLE `users` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- --------------------------------------------------------
+
 --
--- Dumping data for table `users`
+-- Table structure for table `user_progress`
 --
 
-INSERT INTO `users` (`id`, `student_id`, `first_name`, `last_name`, `grade_level`, `classroom`, `email`, `tel`, `password_hash`, `role`, `profile_img`, `created_at`, `updated_at`) VALUES
-(1, '12301', 'สมชาย', 'ศรีสุข', 3, '1', 'somchai.sati.ac.th', '0123456789', '$2b$12$WDniTVWn1nW3SXfyvC11RuCA02WyOah6wrpJJDTtzzTQri5AKGRiC', 'student', 'https://example.com/image.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(2, '12302', 'นางสาวธิดา', 'โสมจันทร์', 2, '2', 'tida.sati.ac.th', '0987654321', '$2b$12$7U4wQgP0s9EBg51hUxDHP.UApKXzF9B3mZR7xZh3aODH3eYfMhfaS', 'student', 'https://example.com/image2.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(3, '12303', 'กนกรัตน์', 'วัฒน์', 4, '3', 'kanok.sati.ac.th', '0765432109', '$2b$12$/d//DB7KpZzEc2SNNu3Cq.wx7BySz.j8uKt.Ce8oKvEtn2i6lkX2u', 'student', 'https://example.com/image3.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(4, '12304', 'อัญชลี', 'เจริญ', 0, '1', 'anchalee.sati.ac.th', '0612345678', '$2b$12$zCveIsXvOZhayjTBmh/07OTHPMVlMBYRMqvDSIAe1Rgkzlg2iPn0', 'teacher', 'https://example.com/image4.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(5, '12305', 'มงคล', 'ชิตจันท์', 0, '2', 'mongkol.sati.ac.th', '0912345678', '$2b$12$IjvRieOoWmPixm4SUauxmOSe3JyLKPUl61lXWciKQmVVJhXxyoyyO', 'admin', 'https://example.com/image5.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(6, '12306', 'ภัทรพงษ์', 'เทพวรรณ', 3, '1', 'pattharaphong.sati.ac.th', '0851234567', '$2b$12$Jdk8I6v/h52bhWHzZ5INM.rO.nJO7km4SHSe73lQTGll.qsXh9nYq', 'student', 'https://example.com/image6.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(7, '12307', 'อารีรัตน์', 'สุริยะ', 2, '2', 'areerat.sati.ac.th', '0823456789', '$2b$12$DZ8hV3jtZjX.fhzUS4R7O2V8BhJlZgLZ8UbgXEaOs9YX3.PXyyT9S', 'student', 'https://example.com/image7.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(8, '12308', 'สุกัญญา', 'ศรีสม', 4, '3', 'sukanya.sati.ac.th', '0976543210', '$2b$12$G9VpZR4Ek1BFGQ9gMdxwKh.pdZ2UKM28cJHikj5eZT3fuwSCfs49z8', 'student', 'https://example.com/image8.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(9, '12309', 'สุเทพ', 'คูณเงิน', 0, '2', 'suthep.sati.ac.th', '0945678901', '$2b$12$OfJQsRwr67TtBGR5emPHR7WqHoklMgeNRVp7w0oYsRRt93bRhFzx6i', 'teacher', 'https://example.com/image9.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37'),
-(10, '12310', 'วีระชัย', 'แสงชัย', 0, '1', 'weera.sati.ac.th', '0912345678', '$2b$12$XQKNeQJt59NY9zd8kUu9rf39zOujGoGGa5cm4sdjr5dAWn.eP10O2', 'admin', 'https://example.com/image10.jpg', '2025-02-07 12:09:37', '2025-02-07 12:09:37');
+CREATE TABLE `user_progress` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `lesson_id` int NOT NULL,
+  `completed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -91,7 +112,7 @@ CREATE TABLE `vocabulary` (
   `word_th` varchar(100) NOT NULL,
   `word_en` varchar(100) NOT NULL,
   `word_kr` varchar(100) NOT NULL,
-  `audio_url` varchar(255) DEFAULT NULL,
+  `audio_url` varchar(255) DEFAULT 'no_audio.mp3',
   `deteil_word` varchar(120) NOT NULL DEFAULT 'none',
   `example_one` varchar(120) NOT NULL,
   `example_two` varchar(120) NOT NULL,
@@ -99,15 +120,15 @@ CREATE TABLE `vocabulary` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
--- Dumping data for table `vocabulary`
---
-
-INSERT INTO `vocabulary` (`id`, `lesson_id`, `word_th`, `word_en`, `word_kr`, `audio_url`, `deteil_word`, `example_one`, `example_two`, `img_url`) VALUES
-(1, 1, 'หัวหอม', 'onion', '양파', 'test', 'none', '', '', '');
-
---
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `exams`
+--
+ALTER TABLE `exams`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `lesson_id` (`lesson_id`);
 
 --
 -- Indexes for table `lessons`
@@ -116,11 +137,26 @@ ALTER TABLE `lessons`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `questions`
+--
+ALTER TABLE `questions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `exam_id` (`exam_id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `student_id` (`student_id`);
+
+--
+-- Indexes for table `user_progress`
+--
+ALTER TABLE `user_progress`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `lesson_id` (`lesson_id`);
 
 --
 -- Indexes for table `vocabulary`
@@ -134,26 +170,63 @@ ALTER TABLE `vocabulary`
 --
 
 --
+-- AUTO_INCREMENT for table `exams`
+--
+ALTER TABLE `exams`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `lessons`
 --
 ALTER TABLE `lessons`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `questions`
+--
+ALTER TABLE `questions`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `user_progress`
+--
+ALTER TABLE `user_progress`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `vocabulary`
 --
 ALTER TABLE `vocabulary`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `exams`
+--
+ALTER TABLE `exams`
+  ADD CONSTRAINT `exams_ibfk_1` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`id`);
+
+--
+-- Constraints for table `questions`
+--
+ALTER TABLE `questions`
+  ADD CONSTRAINT `questions_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`);
+
+--
+-- Constraints for table `user_progress`
+--
+ALTER TABLE `user_progress`
+  ADD CONSTRAINT `user_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_progress_ibfk_2` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `vocabulary`
