@@ -45,7 +45,10 @@
 </style>
 <div class="page" id="examCreatorPage">
 
-    
+    <div class="alert alert-info" role="alert">
+      <i class="fas fa-info-circle me-2"></i>
+      <span>แต่ละบทเรียนสามารถสร้างข้อสอบแต่ละประเภทได้เพียงครั้งเดียวเท่านั้น</span>
+    </div>
 
   <div class="exam-creator">
     <h3 class="mb-4">
