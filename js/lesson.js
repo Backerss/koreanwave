@@ -1,5 +1,6 @@
 // ตรวจสอบว่าตัวแปรถูกประกาศแล้วหรือยัง
 if (typeof currentVocabIndex === 'undefined') {
+    let currentLessonId = 0;
     let currentVocabIndex = 0;
     let vocabularyList = [];
     let audioPlayer;
@@ -11,23 +12,39 @@ window.vocabularyList = window.vocabularyList || [];
 window.audioPlayer = window.audioPlayer || null;
 
 function startLesson(lessonId) {
-    // รีเซ็ตค่าเริ่มต้นทุกครั้งที่เริ่มบทเรียนใหม่
-    window.currentVocabIndex = 0;
-    window.vocabularyList = [];
-    window.audioPlayer = null;
-    
-    Swal.fire({
-        title: 'ยืนยันการเข้าบทเรียน',
-        text: 'คุณต้องการเข้าสู่บทเรียนนี้ใช่หรือไม่?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'ใช่, เข้าบทเรียน',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#003399',
-        cancelButtonColor: '#dc3545'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            loadLessonContent(lessonId);
+    // เช็คสถานะการเรียน
+    currentLessonId = lessonId;
+    $.ajax({
+        url: '../../system/checkLearn.php',
+        type: 'POST',
+        data: { 
+            action: 'check',
+            lessonId: lessonId 
+        },
+        success: function(response) {
+            const result = JSON.parse(response);
+            
+            if (result.success) {
+                if (!result.hasPretest) {
+                    // ถ้ายังไม่ได้ทำแบบทดสอบก่อนเรียน
+                    Swal.fire({
+                        title: 'แบบทดสอบก่อนเรียน',
+                        text: 'คุณต้องทำแบบทดสอบก่อนเรียนก่อน',
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'ทำแบบทดสอบ',
+                        cancelButtonText: 'ยกเลิก'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            //window.location.href = `pretest.php?lesson_id=${lessonId}`;
+                        }
+                    });
+                } else {
+                    // ถ้าทำแบบทดสอบแล้ว โหลดบทเรียนที่ค้างไว้
+                    loadLessonContent(lessonId);
+                    window.currentVocabIndex = result.currentVocabIndex;
+                }
+            }
         }
     });
 }
@@ -149,8 +166,28 @@ function navigateVocab(direction, totalVocab) {
     } else if (direction === 'next' && window.currentVocabIndex < totalVocab - 1) {
         window.currentVocabIndex++;
     }
-    updateLessonPage(null, window.vocabularyList[window.currentVocabIndex], totalVocab);
-    updateNavigationState();
+
+    // บันทึกความก้าวหน้า
+    $.ajax({
+        url: '../../system/checkLearn.php',
+        type: 'POST',
+        data: {
+            action: 'update',
+            lessonId: window.currentLessonId,
+            currentVocabIndex: window.currentVocabIndex
+        },
+        success: function(response) {
+            const result = JSON.parse(response);
+            if (!result.success) {
+                console.error(result.message);
+            } else {
+                updateLessonPage(null, window.vocabularyList[window.currentVocabIndex], totalVocab);
+                updateNavigationState();
+                // เพิ่มการเรียกใช้ฟังก์ชันตรวจสอบการเรียนจบ
+                checkLessonCompletion(window.currentVocabIndex, totalVocab);
+            }
+        }
+    });
 }
 
 function updateNavigationState() {
@@ -210,4 +247,28 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
     const progress = ((window.currentVocabIndex + 1) / totalVocab) * 100;
     $('.progress-bar').css('width', `${progress}%`);
     $('.progress-text').text(`ความคืบหน้า: ${Math.round(progress)}%`);
+}
+
+// เพิ่มฟังก์ชันตรวจสอบว่าเรียนครบทุกคำศัพท์หรือยัง
+function checkLessonCompletion(currentIndex, totalVocab) {
+    if (currentIndex === totalVocab - 1) {
+        Swal.fire({
+            title: 'เรียนจบบทเรียนแล้ว!',
+            text: 'คุณต้องการทำแบบทดสอบหลังเรียนหรือไม่?',
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonText: 'ทำแบบทดสอบ',
+            cancelButtonText: 'เรียนซ้ำ'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // ไปหน้าแบบทดสอบหลังเรียน
+                window.location.href = `posttest.php?lesson_id=${window.currentLessonId}`;
+            } else {
+                // Reset index เพื่อเริ่มเรียนใหม่
+                window.currentVocabIndex = 0;
+                updateLessonPage(null, window.vocabularyList[0], window.vocabularyList.length);
+                updateNavigationState();
+            }
+        });
+    }
 }
