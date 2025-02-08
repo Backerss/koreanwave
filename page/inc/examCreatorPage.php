@@ -1,60 +1,59 @@
 <style>
-    .exam-creator {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-    }
+  .exam-creator {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
 
-    .exam-form {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+  .exam-form {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 
-    .exam-settings {
-        margin-bottom: 25px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #eee;
-    }
+  .exam-settings {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+  }
 
-    .question-builder {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-    }
+  .question-builder {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
 
-    .option-group {
-        margin-top: 15px;
-    }
+  .option-group {
+    margin-top: 15px;
+  }
 
-    .option-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
+  .option-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
 
-    .correct-answer {
-        margin-top: 15px;
-        padding: 15px;
-        background: #e8f5e9;
-        border-radius: 8px;
-    }
+  .correct-answer {
+    margin-top: 15px;
+    padding: 15px;
+    background: #e8f5e9;
+    border-radius: 8px;
+  }
 </style>
 <div class="page" id="examCreatorPage">
 
+  <div class="exam-creator">
     <div class="alert alert-info" role="alert">
       <i class="fas fa-info-circle me-2"></i>
       <span>แต่ละบทเรียนสามารถสร้างข้อสอบแต่ละประเภทได้เพียงครั้งเดียวเท่านั้น</span>
     </div>
-
-  <div class="exam-creator">
     <h3 class="mb-4">
       <i class="fas fa-edit me-2"></i>สร้างข้อสอบ
     </h3>
-    
+
     <div id="examForm" class="exam-form">
       <div class="exam-settings">
         <div class="row">
@@ -95,7 +94,7 @@
       <h4 class="mb-3">
         <i class="fas fa-list me-2"></i>รายการข้อสอบ
       </h4>
-      
+
       <div class="card">
         <div class="card-body">
           <div class="mb-3">
@@ -125,7 +124,7 @@
     </div>
   </div>
 
-  
+
 
   <!-- Template สำหรับข้อสอบ -->
   <template id="questionTemplate">
@@ -136,7 +135,7 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      
+
       <div class="mb-3">
         <label class="form-label">คำถาม</label>
         <textarea class="form-control question-text" rows="2"></textarea>

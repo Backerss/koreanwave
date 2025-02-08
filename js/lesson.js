@@ -70,7 +70,7 @@ function handleLessonData(response) {
             showError('ไม่พบข้อมูลบทเรียน', data.message);
         }
     } catch (e) {
-        showError('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลบทเรียนได้');
+        console.error(e);
     }
 }
 
