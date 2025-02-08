@@ -184,7 +184,7 @@ if (!isset($_SESSION['user_data'])) {
                 // Map pages to their script files
                 const scriptMap = {
                     'profile': '../../js/profile.js',
-                    'courses': '../../js/courses.js',
+                    'courses': '../../js/courese.js',
                     'examCreator': '../../js/exam-creator.js',
                     'attendance': '../../js/lesson.js'
                     // Add other page mappings here

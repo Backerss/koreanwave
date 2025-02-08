@@ -127,8 +127,12 @@ function deleteCourse(id) {
 
 // Add these functions after the existing code
 
-let currentLessonId = null;
-let currentLessonTitle = null;
+if (typeof currentLessonId === 'undefined') {
+    let currentLessonId = null;
+}
+if (typeof currentLessonTitle === 'undefined') {
+    let currentLessonTitle = null;
+}
 
 function showVocabulary(lessonId) {
     currentLessonId = lessonId;

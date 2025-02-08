@@ -1,6 +1,51 @@
 $(document).ready(function () {
+    let currentScript = null;
     
     try {
+        // Function to load page-specific scripts
+        function loadPageScript(pageName) {
+            // Remove previous script if exists
+            if (currentScript) {
+                currentScript.remove();
+                currentScript = null;
+            }
+
+            // Map pages to their script files
+            const scriptMap = {
+                'profile': '../../js/profile.js',
+                'courses': '../../js/courses.js',
+                'examCreator': '../../js/exam-creator.js',
+                'attendance': '../../js/lesson.js'
+                // Add other page mappings here
+            };
+
+            // Load script if page has an associated script file
+            if (scriptMap[pageName]) {
+                const script = document.createElement('script');
+                script.src = scriptMap[pageName];
+                script.type = 'text/javascript';
+                currentScript = script;
+                document.body.appendChild(script);
+            }
+        }
+
+        // Modified navigateToPage function to include script loading
+        function navigateToPage($element, targetPage) {
+            $('.sidebar-menu li').removeClass('active');
+            $element.addClass('active');
+            $('#currentPage').text($element.find('span').text() || '');
+            $('.page').removeClass('active');
+            
+            const $targetPage = $(`#${targetPage}Page`);
+            $targetPage.addClass('active');
+            
+            // Load page-specific script
+            loadPageScript(targetPage);
+            
+            // Trigger custom event for page change
+            $(document).trigger('pageChanged', [targetPage + 'Page']);
+        }
+
         // Sidebar Toggle
         $('#sidebarToggle').on('click', function () {
             $('.sidebar').toggleClass('active');
@@ -38,18 +83,10 @@ $(document).ready(function () {
             }
         });
 
-        // Helper function for page navigation
-        function navigateToPage($element, targetPage) {
-            $('.sidebar-menu li').removeClass('active');
-            $element.addClass('active');
-            $('#currentPage').text($element.find('span').text() || '');
-            $('.page').removeClass('active');
-            
-            const $targetPage = $(`#${targetPage}Page`);
-            $targetPage.addClass('active');
-            
-            // Trigger custom event for page change
-            $(document).trigger('pageChanged', [targetPage + 'Page']);
+        // Load script for initial page if needed
+        const initialPage = $('.sidebar-menu li.active').data('page');
+        if (initialPage) {
+            loadPageScript(initialPage);
         }
 
         // Notification Bell Click
@@ -195,6 +232,9 @@ $(document).ready(function () {
     $(window).on('unload', function() {
         if (clockInterval) {
             clearInterval(clockInterval);
+        }
+        if (currentScript) {
+            currentScript.remove();
         }
     });
 });
