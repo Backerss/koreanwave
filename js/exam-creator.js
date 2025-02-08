@@ -1,24 +1,20 @@
-$(document).ready(function () {
-  // โหลดรายการบทเรียนเมื่อเปิดหน้า
+$(document).ready(function() {
+  // โหลดรายการบทเรียนและข้อสอบเมื่อเปิดหน้า
   loadLessons();
-
-  // Event handlers
-  $('#examType, #lessonSelect').change(validateExamForm);
-  $('#addQuestion').click(addNewQuestion);
-  $('#saveExam').click(saveExam);
-
-  // จัดการการลบข้อสอบ
-  $(document).on('click', '.remove-question', function () {
-    $(this).closest('.question-builder').remove();
-    updateQuestionNumbers();
-  });
-
-  // โหลดรายการข้อสอบเมื่อเปิดหน้า
   loadExamList();
 
-  // กรองรายการข้อสอบตามบทเรียน
-  $('#examListLessonSelect').change(function () {
+  // Event handlers
+  $('#examType, #lessonSelect').on('change', validateExamForm);
+  $('#addQuestion').on('click', addNewQuestion);
+  $('#saveExam').on('click', saveExam);
+  $('#examListLessonSelect').on('change', function() {
     loadExamList($(this).val());
+  });
+
+  // จัดการการลบข้อสอบ
+  $(document).on('click', '.remove-question', function() {
+    $(this).closest('.question-builder').remove();
+    updateQuestionNumbers();
   });
 });
 
@@ -59,14 +55,15 @@ function validateExamForm() {
   const lessonId = $('#lessonSelect').val();
   const isValid = examType && lessonId;
 
-  $('#addQuestion').prop('disabled', !isValid);
-  $('#saveExam').prop('disabled', !isValid);
+  const $addQuestion = $('#addQuestion');
+  const $saveExam = $('#saveExam');
+  const $questionList = $('#questionList');
 
-  if (isValid) {
-    $('#questionList').show();
-  } else {
-    $('#questionList').hide();
-  }
+  $addQuestion.prop('disabled', !isValid);
+  $saveExam.prop('disabled', !isValid);
+  $questionList.toggle(isValid);
+
+  return isValid;
 }
 
 // เพิ่มข้อสอบใหม่
@@ -169,30 +166,38 @@ function loadExamList(lessonId = '') {
   $.get('../../system/manageExams.php', {
     action: 'list',
     lessonId: lessonId
-  }, function (response) {
-    if (response.success) {
-      const examListBody = $('#examListBody');
-      examListBody.empty();
-
-      response.exams.forEach(exam => {
-        examListBody.append(`
-                    <tr>
-                        <td>${exam.lesson_title}</td>
-                        <td>${exam.exam_type === 'pretest' ? 'แบบทดสอบก่อนเรียน' : 'แบบทดสอบหลังเรียน'}</td>
-                        <td>${exam.question_count} ข้อ</td>
-                        <td>${new Date(exam.created_at).toLocaleDateString('th-TH')}</td>
-                        <td>
-                            <button class="btn btn-info btn-sm me-2" onclick="viewExam(${exam.id})">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteExam(${exam.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `);
-      });
+  })
+  .done(function(response) {
+    if (!response.success) {
+      showError(response.message);
+      return;
     }
+
+    const examListBody = $('#examListBody');
+    examListBody.empty();
+
+    response.exams.forEach(exam => {
+      examListBody.append(`
+        <tr>
+          <td>${exam.lesson_title}</td>
+          <td>${exam.exam_type === 'pretest' ? 'แบบทดสอบก่อนเรียน' : 'แบบทดสอบหลังเรียน'}</td>
+          <td>${exam.question_count} ข้อ</td>
+          <td>${new Date(exam.created_at).toLocaleDateString('th-TH')}</td>
+          <td>
+            <button class="btn btn-info btn-sm me-2" onclick="viewExam(${exam.id})">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteExam(${exam.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `);
+    });
+  })
+  .fail(function(xhr, status, error) {
+    showError('ไม่สามารถโหลดรายการข้อสอบได้');
+    console.error(error);
   });
 }
 
@@ -615,70 +620,14 @@ $('#examListLessonSelect').change(function() {
     loadExamList($(this).val());
 });
 
-// เพิ่มฟังก์ชันสำหรับพิมพ์ข้อสอบ
-function printExam(examId) {
-    $.get('../../system/manageExams.php', {
-        action: 'view',
-        examId: examId
-    }, function(response) {
-        if (response.success) {
-            const printWindow = window.open('', '_blank');
-            const printContent = generatePrintContent(response.exam, response.questions);
-            printWindow.document.write(printContent);
-            printWindow.document.close();
-            printWindow.print();
-        }
-    });
-}
-
-// เพิ่มฟังก์ชันสำหรับสร้าง HTML สำหรับพิมพ์
-function generatePrintContent(exam, questions) {
-    return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>ข้อสอบ - ${exam.lesson_title}</title>
-            <style>
-                body { font-family: 'Sarabun', sans-serif; }
-                .question { margin-bottom: 20px; }
-                .options { margin-left: 20px; }
-                @media print {
-                    .no-print { display: none; }
-                }
-            </style>
-        </head>
-        <body>
-            <h2>${exam.lesson_title}</h2>
-            <h3>${exam.exam_type === 'pretest' ? 'แบบทดสอบก่อนเรียน' : 'แบบทดสอบหลังเรียน'}</h3>
-            
-            ${questions.map((q, i) => `
-                <div class="question">
-                    <p><strong>ข้อ ${i + 1}</strong> ${q.question_text}</p>
-                    <div class="options">
-                        <p>ก. ${q.option_a}</p>
-                        <p>ข. ${q.option_b}</p>
-                        <p>ค. ${q.option_c}</p>
-                        <p>ง. ${q.option_d}</p>
-                    </div>
-                </div>
-            `).join('')}
-            
-            <div class="no-print">
-                <button onclick="window.print()">พิมพ์</button>
-            </div>
-        </body>
-        </html>
-    `;
-}
-
 // เพิ่มใน exam-creator.js
 function showError(message) {
-    Swal.fire({
-        icon: 'error',
-        title: 'เกิดข้อผิดพลาด',
-        text: message,
-        confirmButtonText: 'ตกลง'
-    });
+  Swal.fire({
+    icon: 'error',
+    title: 'เกิดข้อผิดพลาด',
+    text: message,
+    confirmButtonText: 'ตกลง'
+  });
 }
 
 // เพิ่มการจัดการ error ในทุก AJAX request
