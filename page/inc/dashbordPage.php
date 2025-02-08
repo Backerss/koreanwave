@@ -1,4 +1,4 @@
-<div class="page active" id="dashboardPage">
+<div class="page" id="dashboardPage">
     <div class="row">
         <!-- Quick Stats -->
         <div class="col-md-3">

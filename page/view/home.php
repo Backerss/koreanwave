@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 
 <?php
 
@@ -68,6 +68,10 @@ if (!isset($_SESSION['user_data'])) {
             <li data-page="courses"> 
                 <i class="fas fa-book"></i>
                 <span>จัดการคอร์ส</span>
+            </li>
+            <li data-page="examCreator">
+                <i class="fas fa-tasks"></i>
+                <span>จัดการข้อสอบ</span>
             </li>
             <?php endif; ?>
 
@@ -147,6 +151,10 @@ if (!isset($_SESSION['user_data'])) {
             <!-- หน้าแสดงการสร้าง แก้ไข ลบ คอร์สและเนื้อหาภายในคอร์ส -->
             <?php include('../inc/couresePage.php') ?>
             <!-- หน้าแสดงการสร้าง แก้ไข ลบ คอร์สและเนื้อหาภายในคอร์ส -->
+            
+            <!-- หน้าแสดงการสร้าง แก้ไข ลบ ข้อสอบ -->
+            <?php include('../inc/examCreatorPage.php') ?>
+            <!-- หน้าแสดงการสร้าง แก้ไข ลบ ข้อสอบ -->
 
         </div>
 
@@ -154,22 +162,70 @@ if (!isset($_SESSION['user_data'])) {
 
     </div>
 
-    <!-- jQuery -->
+    <!-- Base Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Custom JS -->
-    <script src="../../js/home.js"></script>
-    <script src="../../js/lesson.js"></script>
-    <script src="../../js/courese.js"></script>
-    
+
+    <script>
+        $(document).ready(function() {
+            let currentScript = null;
+
+            function loadPageScript(pageName) {
+                // Remove previous script if exists
+                if (currentScript) {
+                    currentScript.remove();
+                    currentScript = null;
+                }
+
+                // Map pages to their script files
+                const scriptMap = {
+                    'profile': '../../js/profile.js',
+                    'courses': '../../js/courses.js',
+                    'examCreator': '../../js/exam-creator.js',
+                    'attendance': '../../js/lesson.js'
+                    // Add other page mappings here
+                };
+
+                // Load script if page has an associated script file
+                if (scriptMap[pageName]) {
+                    const script = document.createElement('script');
+                    script.src = scriptMap[pageName];
+                    script.type = 'text/javascript';
+                    currentScript = script;
+                    document.body.appendChild(script);
+                }
+            }
+
+            // Handle sidebar navigation
+            $('.sidebar-menu li').on('click', function(e) {
+                e.preventDefault();
+                const $element = $(this);
+                const targetPage = $element.data('page');
+
+                // Update UI
+                $('.sidebar-menu li').removeClass('active');
+                $element.addClass('active');
+                $('#currentPage').text($element.find('span').text() || '');
+                $('.page').removeClass('active');
+                
+                const $targetPage = $(`#${targetPage}Page`);
+                $targetPage.addClass('active');
+
+                // Load page-specific script
+                loadPageScript(targetPage);
+            });
+
+            // Load script for initial page if needed
+            const initialPage = $('.sidebar-menu li.active').data('page');
+            if (initialPage) {
+                loadPageScript(initialPage);
+            }
+        });
+    </script>
 </body>
 
 </html>

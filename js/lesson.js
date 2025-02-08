@@ -1,8 +1,21 @@
-let currentVocabIndex = 0;
-let vocabularyList = [];
-let audioPlayer;
+// ตรวจสอบว่าตัวแปรถูกประกาศแล้วหรือยัง
+if (typeof currentVocabIndex === 'undefined') {
+    let currentVocabIndex = 0;
+    let vocabularyList = [];
+    let audioPlayer;
+}
+
+// หรือใช้ window object เพื่อเก็บตัวแปร global
+window.currentVocabIndex = window.currentVocabIndex || 0;
+window.vocabularyList = window.vocabularyList || [];
+window.audioPlayer = window.audioPlayer || null;
 
 function startLesson(lessonId) {
+    // รีเซ็ตค่าเริ่มต้นทุกครั้งที่เริ่มบทเรียนใหม่
+    window.currentVocabIndex = 0;
+    window.vocabularyList = [];
+    window.audioPlayer = null;
+    
     Swal.fire({
         title: 'ยืนยันการเข้าบทเรียน',
         text: 'คุณต้องการเข้าสู่บทเรียนนี้ใช่หรือไม่?',
@@ -20,7 +33,7 @@ function startLesson(lessonId) {
 }
 
 function loadLessonContent(lessonId) {
-    currentVocabIndex = 0;
+    window.currentVocabIndex = 0;
     showLoadingScreen();
 
     $.ajax({
@@ -46,11 +59,12 @@ function handleLessonData(response) {
     try {
         const data = typeof response === 'string' ? JSON.parse(response) : response;
         if (data.success) {
-            vocabularyList = data.vocabulary;
+            window.vocabularyList = data.vocabulary;
             updateLessonPage(data.lesson, data.vocabulary[0], data.vocabulary.length);
             setupVocabNavigation(data.vocabulary.length);
             $('.page').removeClass('active');
             $('#lessonPage').addClass('active');
+            setupNavigationGuard(); // เพิ่มการเรียกใช้ฟังก์ชัน
             Swal.close();
         } else {
             showError('ไม่พบข้อมูลบทเรียน', data.message);
@@ -73,13 +87,13 @@ function showError(title, text) {
 }
 
 function setupAudioPlayer(audioUrl) {
-    if (audioPlayer) {
-        audioPlayer.pause();
-        audioPlayer = null;
+    if (window.audioPlayer) {
+        window.audioPlayer.pause();
+        window.audioPlayer = null;
     }
 
     try {
-        audioPlayer = new Audio(`../../data/voice/${audioUrl}`);
+        window.audioPlayer = new Audio(`../../data/voice/${audioUrl}`);
         setupAudioEventListeners();
     } catch (e) {
         showError('เกิดข้อผิดพลาด', 'ไม่สามารถสร้างตัวเล่นเสียงได้');
@@ -87,16 +101,16 @@ function setupAudioPlayer(audioUrl) {
 }
 
 function setupAudioEventListeners() {
-    audioPlayer.addEventListener('error', () => {
+    window.audioPlayer.addEventListener('error', () => {
         showError('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดไฟล์เสียงได้');
     });
 
-    audioPlayer.addEventListener('play', () => {
+    window.audioPlayer.addEventListener('play', () => {
         $('.btn-play i').removeClass('fa-play').addClass('fa-pause');
     });
 
-    audioPlayer.addEventListener('pause', updatePlayButtonToPlay);
-    audioPlayer.addEventListener('ended', updatePlayButtonToPlay);
+    window.audioPlayer.addEventListener('pause', updatePlayButtonToPlay);
+    window.audioPlayer.addEventListener('ended', updatePlayButtonToPlay);
 }
 
 function updatePlayButtonToPlay() {
@@ -104,15 +118,15 @@ function updatePlayButtonToPlay() {
 }
 
 function playVocabAudio() {
-    if (!audioPlayer) return;
+    if (!window.audioPlayer) return;
 
     try {
-        if (audioPlayer.paused) {
-            audioPlayer.play().catch(() => {
+        if (window.audioPlayer.paused) {
+            window.audioPlayer.play().catch(() => {
                 showError('เกิดข้อผิดพลาด', 'ไม่สามารถเล่นเสียงได้');
             });
         } else {
-            audioPlayer.pause();
+            window.audioPlayer.pause();
         }
     } catch (e) {
         showError('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเล่นเสียง');
@@ -132,23 +146,23 @@ function setupVocabNavigation(totalVocab) {
 }
 
 function navigateVocab(direction, totalVocab) {
-    if (direction === 'prev' && currentVocabIndex > 0) {
-        currentVocabIndex--;
-    } else if (direction === 'next' && currentVocabIndex < totalVocab - 1) {
-        currentVocabIndex++;
+    if (direction === 'prev' && window.currentVocabIndex > 0) {
+        window.currentVocabIndex--;
+    } else if (direction === 'next' && window.currentVocabIndex < totalVocab - 1) {
+        window.currentVocabIndex++;
     }
-    updateLessonPage(null, vocabularyList[currentVocabIndex], totalVocab);
+    updateLessonPage(null, window.vocabularyList[window.currentVocabIndex], totalVocab);
     updateNavigationState();
 }
 
 function updateNavigationState() {
     const $prevBtn = $('.btn-prev');
     const $nextBtn = $('.btn-next');
-    const totalVocab = vocabularyList.length;
+    const totalVocab = window.vocabularyList.length;
 
-    $prevBtn.prop('disabled', currentVocabIndex === 0);
-    $nextBtn.prop('disabled', currentVocabIndex === totalVocab - 1);
-    $('.vocab-counter').text(`${currentVocabIndex + 1}/${totalVocab}`);
+    $prevBtn.prop('disabled', window.currentVocabIndex === 0);
+    $nextBtn.prop('disabled', window.currentVocabIndex === totalVocab - 1);
+    $('.vocab-counter').text(`${window.currentVocabIndex + 1}/${totalVocab}`);
 }
 
 function updateLessonPage(lesson, vocabulary, totalVocab) {
@@ -171,9 +185,9 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
         $('.btn-play').show();
     } else {
         console.log('No audio URL available'); // เพิ่ม log เพื่อดีบัก
-        if (audioPlayer) {
-            audioPlayer.pause();
-            audioPlayer = null;
+        if (window.audioPlayer) {
+            window.audioPlayer.pause();
+            window.audioPlayer = null;
         }
         $('.btn-play').hide();
     }
@@ -195,7 +209,48 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
     }
     $('.example-list').html(examplesHtml);
 
-    const progress = ((currentVocabIndex + 1) / totalVocab) * 100;
+    const progress = ((window.currentVocabIndex + 1) / totalVocab) * 100;
     $('.progress-bar').css('width', `${progress}%`);
     $('.progress-text').text(`ความคืบหน้า: ${Math.round(progress)}%`);
+}
+
+// Add this function after existing code
+function setupNavigationGuard() {
+    // เพิ่ม event listener สำหรับทุกลิงก์นำทางในเว็บไซต์
+    $(document).on('click', 'a[href], .nav-link, .page-link', function(event) {
+        // ตรวจสอบว่าอยู่ในหน้าบทเรียนหรือไม่
+        if ($('#lessonPage').hasClass('active')) {
+            event.preventDefault();
+            const targetUrl = $(this).attr('href') || '#';
+            const targetElement = this;
+            
+            Swal.fire({
+                title: 'ต้องการออกจากบทเรียน?',
+                text: 'ความคืบหน้าในบทเรียนจะไม่ถูกบันทึก',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ใช่, ออกจากบทเรียน',
+                cancelButtonText: 'ไม่, อยู่ในบทเรียนต่อ',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#003399'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // หยุดการเล่นเสียงถ้ามีการเล่นอยู่
+                    if (window.audioPlayer) {
+                        window.audioPlayer.pause();
+                        window.audioPlayer = null;
+                    }
+                    
+                    // ถ้าเป็น hash URL ให้ใช้ addClass/removeClass
+                    if (targetUrl.startsWith('#')) {
+                        $('.page').removeClass('active');
+                        $(targetUrl).addClass('active');
+                    } else {
+                        // ถ้าเป็น URL ปกติให้ redirect
+                        window.location.href = targetUrl;
+                    }
+                }
+            });
+        }
+    });
 }

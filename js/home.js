@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    
     try {
         // Sidebar Toggle
         $('#sidebarToggle').on('click', function () {
@@ -43,7 +44,12 @@ $(document).ready(function () {
             $element.addClass('active');
             $('#currentPage').text($element.find('span').text() || '');
             $('.page').removeClass('active');
-            $(`#${targetPage}Page`).addClass('active');
+            
+            const $targetPage = $(`#${targetPage}Page`);
+            $targetPage.addClass('active');
+            
+            // Trigger custom event for page change
+            $(document).trigger('pageChanged', [targetPage + 'Page']);
         }
 
         // Notification Bell Click
@@ -192,3 +198,13 @@ $(document).ready(function () {
         }
     });
 });
+
+// Example for exam-creator.js
+(function() {
+    // Initialize only if we're on the exam creator page
+    if (!$('#examCreatorPage').hasClass('active')) return;
+    
+    let questionCount = 0;
+    
+    // Your existing exam creator code...
+})();
