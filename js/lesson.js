@@ -1,6 +1,8 @@
+let currentVocabIndex = 0;
+let vocabularyList = [];
+let audioPlayer;
 
 function startLesson(lessonId) {
-    // Show confirmation dialog first
     Swal.fire({
         title: 'ยืนยันการเข้าบทเรียน',
         text: 'คุณต้องการเข้าสู่บทเรียนนี้ใช่หรือไม่?',
@@ -12,19 +14,13 @@ function startLesson(lessonId) {
         cancelButtonColor: '#dc3545'
     }).then((result) => {
         if (result.isConfirmed) {
-            // User confirmed, proceed to load lesson
             loadLessonContent(lessonId);
         }
     });
 }
 
-// Add these variables at the top of your script
-let currentVocabIndex = 0;
-let vocabularyList = [];
-
-// Modify the loadLessonContent function
 function loadLessonContent(lessonId) {
-    currentVocabIndex = 0; // Reset index when loading new lesson
+    currentVocabIndex = 0;
     
     Swal.fire({
         title: 'กำลังโหลดบทเรียน...',
@@ -42,14 +38,11 @@ function loadLessonContent(lessonId) {
         data: { lessonId: lessonId },
         success: function(response) {
             try {
-                const data = JSON.parse(response);
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
                 if (data.success) {
-                    vocabularyList = data.vocabulary; // Store all vocabulary items
-                    updateLessonPage(data.lesson, data.vocabulary[0], data.totalVocab);
-
-                    // Set up navigation buttons
-                    setupVocabNavigation(data.totalVocab);
-
+                    vocabularyList = data.vocabulary;
+                    updateLessonPage(data.lesson, data.vocabulary[0], data.vocabulary.length);
+                    setupVocabNavigation(data.vocabulary.length);
                     $('.page').removeClass('active');
                     $('#lessonPage').addClass('active');
                     Swal.close();
@@ -57,7 +50,7 @@ function loadLessonContent(lessonId) {
                     Swal.fire({
                         icon: 'error',
                         title: 'ไม่พบข้อมูลบทเรียน',
-                        text: 'กรุณาลองใหม่อีกครั้ง'
+                        text: data.message
                     });
                 }
             } catch (e) {
@@ -79,10 +72,23 @@ function loadLessonContent(lessonId) {
     });
 }
 
-// Add these new functions
+function setupAudioPlayer(audioUrl) {
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer = null;
+    }
+    audioPlayer = new Audio(`../../data/voice/${audioUrl}`);
+}
+
+function playVocabAudio() {
+    if (audioPlayer) {
+        audioPlayer.play();
+    }
+}
+
 function setupVocabNavigation(totalVocab) {
     const $prevBtn = $('.btn-prev');
-    const $nextBtn = $('.btn-next');
+    const $nextBtn = $('..btn-next');
     
     updateNavigationState();
 
@@ -106,33 +112,33 @@ function setupVocabNavigation(totalVocab) {
 function updateNavigationState() {
     const $prevBtn = $('.btn-prev');
     const $nextBtn = $('.btn-next');
-    const $counter = $('.vocab-counter');
-    
-    // Update counter
-    $counter.text(`${currentVocabIndex + 1}/${vocabularyList.length}`);
-    
-    // Update button states
+    const totalVocab = vocabularyList.length;
+
     $prevBtn.prop('disabled', currentVocabIndex === 0);
-    $nextBtn.prop('disabled', currentVocabIndex === vocabularyList.length - 1);
+    $nextBtn.prop('disabled', currentVocabIndex === totalVocab - 1);
+    $('.vocab-counter').text(`${currentVocabIndex + 1}/${totalVocab}`);
 }
 
-// Modify the updateLessonPage function
 function updateLessonPage(lesson, vocabulary, totalVocab) {
-    // Update lesson header if lesson data is provided
     if (lesson) {
         $('.lesson-header-card h3').text(`บทที่ ${lesson.id}: ${lesson.title}`);
     }
 
-    // Update content
     $('.lesson-main-image').attr('src', vocabulary.img_url || 'https://placehold.co/800x600');
     $('.lesson-text-content h4').text(vocabulary.word_kr);
     $('.lesson-text-content .lesson-description').text(vocabulary.deteil_word);
 
-    // Update pronunciation section
     $('.pronunciation-item .korean').text(vocabulary.word_kr);
     $('.pronunciation-item .romanized').text(vocabulary.word_en);
 
-    // Update examples
+    // Set up audio player
+    if (vocabulary.audio_url) {
+        setupAudioPlayer(vocabulary.audio_url);
+        $('.btn-play').show();
+    } else {
+        $('.btn-play').hide();
+    }
+
     let examplesHtml = '';
     if (vocabulary.example_one) {
         examplesHtml += `
@@ -150,7 +156,6 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
     }
     $('.example-list').html(examplesHtml);
 
-    // Update progress
     const progress = ((currentVocabIndex + 1) / totalVocab) * 100;
     $('.progress-bar').css('width', `${progress}%`);
     $('.progress-text').text(`ความคืบหน้า: ${Math.round(progress)}%`);

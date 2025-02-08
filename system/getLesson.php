@@ -4,17 +4,22 @@ require_once 'db.php';
 if(isset($_GET['lessonId'])) {
     $lessonId = $_GET['lessonId'];
     
-    try {
+    try {        
         // Get lesson data
         $lessonStmt = $db->prepare("SELECT * FROM lessons WHERE id = ?");
         $lessonStmt->execute([$lessonId]);
-        $lesson = $lessonStmt->fetch();
+        $lesson = $lessonStmt->fetch(PDO::FETCH_ASSOC);
 
         if($lesson) {
-            // Get all vocabulary for this lesson
-            $vocabStmt = $db->prepare("SELECT * FROM vocabulary WHERE lesson_id = ?");
+            // Get all vocabulary for this lesson including audio_url
+            $vocabStmt = $db->prepare("
+                SELECT id, word_th, word_en, word_kr, audio_url, deteil_word, 
+                       example_one, example_two, img_url 
+                FROM vocabulary 
+                WHERE lesson_id = ?
+            ");
             $vocabStmt->execute([$lessonId]);
-            $vocabulary = $vocabStmt->fetchAll();
+            $vocabulary = $vocabStmt->fetchAll(PDO::FETCH_ASSOC);
 
             echo json_encode([
                 'success' => true,
