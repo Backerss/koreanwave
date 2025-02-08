@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 08, 2025 at 02:06 PM
+-- Generation Time: Feb 08, 2025 at 06:21 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -33,6 +33,24 @@ CREATE TABLE `exams` (
   `exam_type` enum('pretest','posttest') NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `learning_progress`
+--
+
+CREATE TABLE `learning_progress` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `lesson_id` int NOT NULL,
+  `current_vocab_index` int DEFAULT '0',
+  `pretest_done` tinyint(1) DEFAULT '0',
+  `posttest_done` tinyint(1) DEFAULT '0',
+  `completed` tinyint(1) DEFAULT '0',
+  `last_accessed` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -90,19 +108,6 @@ CREATE TABLE `users` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `user_progress`
---
-
-CREATE TABLE `user_progress` (
-  `id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `lesson_id` int NOT NULL,
-  `completed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `vocabulary`
 --
 
@@ -131,6 +136,14 @@ ALTER TABLE `exams`
   ADD KEY `lesson_id` (`lesson_id`);
 
 --
+-- Indexes for table `learning_progress`
+--
+ALTER TABLE `learning_progress`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `lesson_id` (`lesson_id`);
+
+--
 -- Indexes for table `lessons`
 --
 ALTER TABLE `lessons`
@@ -151,14 +164,6 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `student_id` (`student_id`);
 
 --
--- Indexes for table `user_progress`
---
-ALTER TABLE `user_progress`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`),
-  ADD KEY `lesson_id` (`lesson_id`);
-
---
 -- Indexes for table `vocabulary`
 --
 ALTER TABLE `vocabulary`
@@ -173,6 +178,12 @@ ALTER TABLE `vocabulary`
 -- AUTO_INCREMENT for table `exams`
 --
 ALTER TABLE `exams`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `learning_progress`
+--
+ALTER TABLE `learning_progress`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
@@ -194,12 +205,6 @@ ALTER TABLE `users`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `user_progress`
---
-ALTER TABLE `user_progress`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `vocabulary`
 --
 ALTER TABLE `vocabulary`
@@ -216,17 +221,17 @@ ALTER TABLE `exams`
   ADD CONSTRAINT `exams_ibfk_1` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`id`);
 
 --
+-- Constraints for table `learning_progress`
+--
+ALTER TABLE `learning_progress`
+  ADD CONSTRAINT `learning_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `learning_progress_ibfk_2` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`id`);
+
+--
 -- Constraints for table `questions`
 --
 ALTER TABLE `questions`
   ADD CONSTRAINT `questions_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`);
-
---
--- Constraints for table `user_progress`
---
-ALTER TABLE `user_progress`
-  ADD CONSTRAINT `user_progress_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `user_progress_ibfk_2` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `vocabulary`
