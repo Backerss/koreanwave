@@ -156,7 +156,9 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
         $('.lesson-header-card h3').text(`บทที่ ${lesson.id}: ${lesson.title}`);
     }
 
-    $('.lesson-main-image').attr('src', vocabulary.img_url || 'https://placehold.co/800x600');
+    
+
+    $('.lesson-main-image').attr('src', vocabulary.img_url ? `../../data/images/${vocabulary.img_url}` : 'https://placehold.co/800x600');
     $('.lesson-text-content h4').text(vocabulary.word_kr);
     $('.lesson-text-content .lesson-description').text(vocabulary.deteil_word);
 
