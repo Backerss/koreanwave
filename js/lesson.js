@@ -23,7 +23,6 @@ function startLesson(lessonId) {
         },
         success: function(response) {
             const result = JSON.parse(response);
-            
             if (result.success) {
                 if (!result.hasPretest) {
                     // ถ้ายังไม่ได้ทำแบบทดสอบก่อนเรียน

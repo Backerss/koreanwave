@@ -16,6 +16,7 @@ if (isset($_POST['studentId']) && isset($_POST['password'])) {
         if($password == $row['student_id'])
         {            
             $_SESSION['user_data'] = [
+                'id' => $row['id'],
                 'studentId' => $row['student_id'],
                 'name' => $row['first_name'] . " " . $row['last_name'],
                 'email' => $row['email'],
