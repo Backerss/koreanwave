@@ -40,8 +40,8 @@ function startLesson(lessonId) {
                     });
                 } else {
                     // ถ้าทำแบบทดสอบแล้ว โหลดบทเรียนที่ค้างไว้
+                    window.currentVocabIndex = result.currentVocabIndex; // ตั้งค่า index ก่อนโหลดบทเรียน
                     loadLessonContent(lessonId);
-                    window.currentVocabIndex = result.currentVocabIndex;
                 }
             }
         }
@@ -49,26 +49,24 @@ function startLesson(lessonId) {
 }
 
 function loadLessonContent(lessonId) {
-    $.get('../../system/checkLearn.php', {
-        lesson_id: lessonId
-    }, function (response) {
-        if (response.success) {
-            const status = $(`[data-lesson-id="${lessonId}"] .exam-status`);
-            if (response.hasPretest && response.hasPosttest) {
-                status.html('<span class="badge bg-success">พร้อมเรียน</span>');
-            } else {
-                status.html('<span class="badge bg-warning">รอแบบทดสอบ</span>');
-            }
-        }
-    });
-
-    window.currentVocabIndex = 0;
-
     $.ajax({
         url: '../../system/getLesson.php',
         type: 'GET',
         data: { lessonId: lessonId },
-        success: handleLessonData,
+        success: function(response) {
+            const data = typeof response === 'string' ? JSON.parse(response) : response;
+            if (data.success) {
+                window.vocabularyList = data.vocabulary;
+                // ใช้ currentVocabIndex ที่ได้จาก server แทนการเริ่มที่ 0
+                updateLessonPage(data.lesson, data.vocabulary[window.currentVocabIndex], data.vocabulary.length);
+                setupVocabNavigation(data.vocabulary.length);
+                $('.page').removeClass('active');
+                $('#lessonPage').addClass('active');
+                Swal.close();
+            } else {
+                showError('ไม่พบข้อมูลบทเรียน', data.message);
+            }
+        },
         error: handleAjaxError
     });
 }
@@ -263,24 +261,33 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
 
 // เพิ่มฟังก์ชันตรวจสอบว่าเรียนครบทุกคำศัพท์หรือยัง
 function checkLessonCompletion(currentIndex, totalVocab) {
+    // เพิ่มการตรวจสอบว่าอยู่ที่คำศัพท์สุดท้ายและกดปุ่มถัดไป
     if (currentIndex === totalVocab - 1) {
-        Swal.fire({
-            title: 'เรียนจบบทเรียนแล้ว!',
-            text: 'คุณต้องการทำแบบทดสอบหลังเรียนหรือไม่?',
-            icon: 'success',
-            showCancelButton: true,
-            confirmButtonText: 'ทำแบบทดสอบ',
-            cancelButtonText: 'เรียนซ้ำ'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // ไปหน้าแบบทดสอบหลังเรียน
-                window.location.href = `posttest.php?lesson_id=${window.currentLessonId}`;
-            } else {
-                // Reset index เพื่อเริ่มเรียนใหม่
-                window.currentVocabIndex = 0;
-                updateLessonPage(null, window.vocabularyList[0], window.vocabularyList.length);
-                updateNavigationState();
-            }
+        const $nextBtn = $('.btn-next');
+
+        $nextBtn.prop('disabled', false);
+        
+        console.log(currentIndex, totalVocab);
+        // ผูกเหตุการณ์คลิกปุ่มถัดไป
+        $nextBtn.one('click', () => {
+            Swal.fire({
+                title: 'เรียนจบบทเรียนแล้ว!',
+                text: 'คุณต้องการทำแบบทดสอบหลังเรียนหรือไม่?',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'ทำแบบทดสอบ',
+                cancelButtonText: 'เรียนซ้ำ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // ไปหน้าแบบทดสอบหลังเรียน
+                    window.location.href = `posttest.php?lesson_id=${window.currentLessonId}`;
+                } else {
+                    // Reset index เพื่อเริ่มเรียนใหม่
+                    window.currentVocabIndex = 0;
+                    updateLessonPage(null, window.vocabularyList[0], window.vocabularyList.length);
+                    updateNavigationState();
+                }
+            });
         });
     }
 }
