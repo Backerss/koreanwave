@@ -35,13 +35,13 @@ function startLesson(lessonId) {
                         cancelButtonText: 'ยกเลิก'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            //window.location.href = `pretest.php?lesson_id=${lessonId}`;
+                            window.location.href = `../view/exam.php?lesson_id=${lessonId}&type=pretest`;
                         }
                     });
                 } else {
                     // ถ้าทำแบบทดสอบแล้ว โหลดบทเรียนที่ค้างไว้
-                    window.currentVocabIndex = result.currentVocabIndex; // ตั้งค่า index ก่อนโหลดบทเรียน
                     loadLessonContent(lessonId);
+                    window.currentVocabIndex = result.currentVocabIndex;
                 }
             }
         }
@@ -49,24 +49,26 @@ function startLesson(lessonId) {
 }
 
 function loadLessonContent(lessonId) {
+    $.get('../../system/checkLearn.php', {
+        lesson_id: lessonId
+    }, function (response) {
+        if (response.success) {
+            const status = $(`[data-lesson-id="${lessonId}"] .exam-status`);
+            if (response.hasPretest && response.hasPosttest) {
+                status.html('<span class="badge bg-success">พร้อมเรียน</span>');
+            } else {
+                status.html('<span class="badge bg-warning">รอแบบทดสอบ</span>');
+            }
+        }
+    });
+
+    window.currentVocabIndex = 0;
+
     $.ajax({
         url: '../../system/getLesson.php',
         type: 'GET',
         data: { lessonId: lessonId },
-        success: function(response) {
-            const data = typeof response === 'string' ? JSON.parse(response) : response;
-            if (data.success) {
-                window.vocabularyList = data.vocabulary;
-                // ใช้ currentVocabIndex ที่ได้จาก server แทนการเริ่มที่ 0
-                updateLessonPage(data.lesson, data.vocabulary[window.currentVocabIndex], data.vocabulary.length);
-                setupVocabNavigation(data.vocabulary.length);
-                $('.page').removeClass('active');
-                $('#lessonPage').addClass('active');
-                Swal.close();
-            } else {
-                showError('ไม่พบข้อมูลบทเรียน', data.message);
-            }
-        },
+        success: handleLessonData,
         error: handleAjaxError
     });
 }

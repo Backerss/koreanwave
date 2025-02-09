@@ -5,8 +5,8 @@
         <div class="test-header">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h3><i class="fas fa-file-alt me-2"></i>แบบทดสอบก่อนเรียน</h3>
-                    <p class="text-muted">บทที่ 1: การทักทายในภาษาเกาหลี</p>
+                    <h3><i class="fas fa-file-alt me-2"></i>แบบทดสอบ</h3>
+                    <p class="text-muted">บทที่ X: XXXXX</p>
                 </div>
                 <div class="col-md-4">
                     <div class="test-info">
@@ -16,7 +16,7 @@
                         </div>
                         <div class="info-item">
                             <i class="fas fa-list-ol"></i>
-                            <span>จำนวน: 10 ข้อ</span>
+                            <span>จำนวน: XX ข้อ</span>
                         </div>
                     </div>
                 </div>

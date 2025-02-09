@@ -23,7 +23,7 @@ $(document).ready(function () {
                 'profile': '../../js/profile.js',
                 'courses': '../../js/courese.js',
                 'examCreator': '../../js/exam-creator.js',
-                'attendance': '../../js/lesson.js'
+                'attendance': '../../js/lesson.js',
                 // Add other page mappings here
             };
 
