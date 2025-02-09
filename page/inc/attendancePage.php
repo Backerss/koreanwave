@@ -43,7 +43,7 @@ try {
                                     </span>
                                 </div>
                             </div>
-                            <button class="btn btn-primary w-100" onclick="startLesson(<?php echo $lesson['id']; ?>)">
+                            <button class="btn btn-primary w-100" onclick="checkLessonAccess(<?php echo $lesson['id']; ?>)">
                                 <i class="fas fa-play-circle"></i> เข้าเรียน
                             </button>
                         </div>

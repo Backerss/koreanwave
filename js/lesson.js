@@ -17,11 +17,11 @@ function startLesson(lessonId) {
     $.ajax({
         url: '../../system/checkLearn.php',
         type: 'POST',
-        data: { 
+        data: {
             action: 'check',
-            lessonId: lessonId 
+            lessonId: lessonId
         },
-        success: function(response) {
+        success: function (response) {
             const result = JSON.parse(response);
             if (result.success) {
                 if (!result.hasPretest) {
@@ -49,6 +49,19 @@ function startLesson(lessonId) {
 }
 
 function loadLessonContent(lessonId) {
+    $.get('../../system/checkLearn.php', {
+        lesson_id: lessonId
+    }, function (response) {
+        if (response.success) {
+            const status = $(`[data-lesson-id="${lessonId}"] .exam-status`);
+            if (response.hasPretest && response.hasPosttest) {
+                status.html('<span class="badge bg-success">พร้อมเรียน</span>');
+            } else {
+                status.html('<span class="badge bg-warning">รอแบบทดสอบ</span>');
+            }
+        }
+    });
+
     window.currentVocabIndex = 0;
 
     $.ajax({
@@ -175,7 +188,7 @@ function navigateVocab(direction, totalVocab) {
             lessonId: window.currentLessonId,
             currentVocabIndex: window.currentVocabIndex
         },
-        success: function(response) {
+        success: function (response) {
             const result = JSON.parse(response);
             if (!result.success) {
                 console.error(result.message);
@@ -204,7 +217,7 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
         $('.lesson-header-card h3').text(`บทที่ ${lesson.id}: ${lesson.title}`);
     }
 
-    
+
 
     $('.lesson-main-image').attr('src', vocabulary.img_url ? `../../data/images/${vocabulary.img_url}` : 'https://placehold.co/800x600');
     $('.lesson-text-content h4').text(vocabulary.word_kr);
@@ -270,4 +283,43 @@ function checkLessonCompletion(currentIndex, totalVocab) {
             }
         });
     }
+}
+
+function checkLessonAccess(lessonId) {
+    $.get('../../system/checkLearn.php', {
+        lesson_id: lessonId
+    }, function (response) {
+
+        let res = JSON.parse(response);
+
+    
+        if (res.success) {
+            const userRole = res.userRole;
+
+            // อนุญาตให้ครูและแอดมินเข้าถึงได้เสมอ
+            if (userRole === 'teacher' || userRole === 'admin') {
+                startLesson(lessonId);
+                return;
+            }
+
+            // ตรวจสอบแบบทดสอบสำหรับนักเรียน
+            if (!res.hasPretest || !res.hasPosttest) {
+                Swal.fire({
+                    title: 'ไม่สามารถเข้าเรียนได้',
+                    text: 'บทเรียนนี้ยังไม่มีแบบทดสอบครบถ้วน กรุณาติดต่อผู้สอน',
+                    icon: 'warning',
+                    confirmButtonText: 'ตกลง'
+                });
+            } else {
+                startLesson(lessonId);
+            }
+        } else {
+            Swal.fire({
+                title: 'เกิดข้อผิดพลาด',
+                text: res.message,
+                icon: 'error',
+                confirmButtonText: 'ตกลง'
+            });
+        }
+    });
 }

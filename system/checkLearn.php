@@ -2,6 +2,44 @@
 session_start();
 require_once 'db.php';
 
+function checkLessonExams($lessonId) {
+    global $db;
+    
+    try {
+        $stmt = $db->prepare("
+            SELECT exam_type 
+            FROM exams 
+            WHERE lesson_id = ?
+        ");
+        $stmt->execute([$lessonId]);
+        $exams = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        return [
+            'success' => true,
+            'hasPretest' => in_array('pretest', $exams),
+            'hasPosttest' => in_array('posttest', $exams),
+            'userRole' => $_SESSION['user_data']['role'] ?? 'student'
+        ];
+    } catch (Exception $e) {
+        return [
+            'success' => false,
+            'message' => $e->getMessage()
+        ];
+    }
+}
+
+// รับค่าที่ส่งมาแบบ GET
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_GET['lesson_id'])) {
+        $result = checkLessonExams($_GET['lesson_id']);
+        echo json_encode($result);
+        exit;
+    } else {
+        echo json_encode(['success' => false, 'message' => 'No lesson_id provided']);
+        exit;
+    }
+}
+
 // รับค่าที่ส่งมา
 $lessonId = $_POST['lessonId']; 
 $userId = $_SESSION['user_data']['id'];

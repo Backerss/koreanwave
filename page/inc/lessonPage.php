@@ -71,6 +71,44 @@
                     </div>
                 </div>
             </div>
+
+            <!-- เพิ่มเงื่อนไขตรวจสอบบทบาท -->
+            <?php if (isset($_SESSION['user_data'])): ?>
+            <script>
+            const userRole = "<?php echo $_SESSION['user_data']['role']; ?>";
+            </script>
+            <?php endif; ?>
+
+            <!-- แก้ไขส่วนแสดงบทเรียน -->
+            <?php 
+            $lessons = []; // Initialize empty array
+            
+            foreach ($lessons as $lesson): ?>
+            <!-- เพิ่มส่วนแสดงสถานะแบบทดสอบในการ์ดบทเรียน -->
+            <div class="col-md-4 mb-4">
+                <div class="card lesson-card" data-lesson-id="<?php echo $lesson['id']; ?>">
+                    <img src="<?php echo htmlspecialchars($lesson['image_url'] ?? 'https://placehold.co/400x200'); ?>"
+                        class="card-img-top" alt="<?php echo htmlspecialchars($lesson['title']); ?>">
+                    <div class="card-body">
+                        <h5 class="card-title"><?php echo htmlspecialchars($lesson['title']); ?></h5>
+                        <p class="card-text"><?php echo htmlspecialchars($lesson['category']); ?></p>
+                        <div class="lesson-stats mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted vocab-count">
+                                    <i class="fas fa-list"></i> <?php echo $vocabCount; ?> คำศัพท์
+                                </span>
+                                <span class="exam-status">
+                                    <!-- สถานะแบบทดสอบจะถูกเติมด้วย JavaScript -->
+                                </span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="checkLessonAccess(<?php echo $lesson['id']; ?>)">
+                            <i class="fas fa-play-circle"></i> เข้าเรียน
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </div>
