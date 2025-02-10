@@ -24,7 +24,7 @@ function startLesson(lessonId) {
             const result = JSON.parse(response);
             if (result.success) {
                 if (!result.hasPretest) {
-                    // ดึง exam_id ของแบบทดสอบก่อนเรียนของบทเรียนนี้
+                    // ดึง exam_id ของแบบทดสอบก่อนเรียน
                     $.ajax({
                         url: '../../system/manageExams.php',
                         type: 'GET',
@@ -35,7 +35,6 @@ function startLesson(lessonId) {
                         },
                         success: function(examResponse) {
                             if (examResponse.success && examResponse.exam) {
-                                // ถ้ายังไม่ได้ทำแบบทดสอบก่อนเรียน
                                 Swal.fire({
                                     title: 'แบบทดสอบก่อนเรียน',
                                     text: 'คุณต้องทำแบบทดสอบก่อนเรียนก่อน',
@@ -54,7 +53,7 @@ function startLesson(lessonId) {
                         }
                     });
                 } else {
-                    // ถ้าทำแบบทดสอบแล้ว โหลดบทเรียนที่ค้างไว้
+                    // ถ้าทำแบบทดสอบแล้ว โหลดบทเรียน
                     loadLessonContent(lessonId);
                     window.currentVocabIndex = result.currentVocabIndex;
                 }

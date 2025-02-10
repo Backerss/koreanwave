@@ -528,6 +528,33 @@ function submitExam($examId, $answersJson, $timeSpent) {
             ]);
         }
         
+        // ดึงข้อมูล exam และ lesson_id
+        $stmt = $db->prepare("
+            SELECT e.*, l.id as lesson_id 
+            FROM exams e
+            JOIN lessons l ON e.lesson_id = l.id
+            WHERE e.id = ?
+        ");
+        $stmt->execute([$examId]);
+        $exam = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$exam) {
+            throw new Exception('ไม่พบข้อสอบ');
+        }
+
+        // อัพเดทสถานะการทำแบบทดสอบในตาราง learning_progress
+        if ($exam['exam_type'] === 'pretest') {
+            $stmt = $db->prepare("
+                UPDATE learning_progress 
+                SET pretest_done = 1 
+                WHERE user_id = ? AND lesson_id = ?
+            ");
+            $stmt->execute([
+                $_SESSION['user_data']['id'],
+                $exam['lesson_id']
+            ]);
+        }
+        
         $db->commit();
         
         echo json_encode([
