@@ -37,6 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'getExistingExams':
                 getExistingExams();
                 break;
+            case 'loadExamQuestions':
+                loadExamQuestions($_GET['examId']);
+                break;
         }
     }
 }
@@ -366,6 +369,47 @@ function getExistingExams() {
         echo json_encode([
             'success' => true,
             'existingExams' => $stmt->fetchAll(PDO::FETCH_ASSOC)
+        ]);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
+
+// เพิ่มฟังก์ชันสำหรับโหลดคำถามของข้อสอบ
+function loadExamQuestions($examId) {
+    global $db;
+    
+    try {
+        // Fetch exam details
+        $stmt = $db->prepare("
+            SELECT e.*, l.title as lesson_title 
+            FROM exams e
+            JOIN lessons l ON e.lesson_id = l.id
+            WHERE e.id = ?
+        ");
+        $stmt->execute([$examId]);
+        $exam = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$exam) {
+            throw new Exception('ไม่พบแบบทดสอบ');
+        }
+        
+        // Fetch questions
+        $stmt = $db->prepare("
+            SELECT * FROM questions 
+            WHERE exam_id = ?
+            ORDER BY id ASC
+        ");
+        $stmt->execute([$examId]);
+        $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'exam' => $exam,
+            'questions' => $questions
         ]);
     } catch (Exception $e) {
         echo json_encode([
