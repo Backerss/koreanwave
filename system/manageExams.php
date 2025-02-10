@@ -20,6 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'updateQuestion':
                 updateQuestion($_POST['questionData']);
                 break;
+            case 'submitExam':
+                submitExam($_POST['exam_id'], $_POST['answers'], $_POST['time_spent']);
+                break;
         }
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -415,6 +418,128 @@ function loadExamQuestions($examId) {
         echo json_encode([
             'success' => false,
             'message' => $e->getMessage()
+        ]);
+    }
+}
+
+// Add this new function at the bottom of the file
+function submitExam($examId, $answersJson, $timeSpent) {
+    global $db;
+    
+    try {
+        $db->beginTransaction();
+        
+        // Decode answers
+        $answers = json_decode($answersJson, true);
+        if (!$answers) {
+            throw new Exception('Invalid answer format');
+        }
+        
+        // Get exam details and correct answers
+        $stmt = $db->prepare("
+            SELECT q.id, q.correct_answer, e.lesson_id
+            FROM questions q
+            JOIN exams e ON q.exam_id = e.id
+            WHERE q.exam_id = ?
+        ");
+        $stmt->execute([$examId]);
+        $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Calculate score
+        $totalQuestions = count($questions);
+        $correctAnswers = 0;
+        $questionResults = [];
+        
+        foreach ($answers as $answer) {
+            $questionId = $answer['question_id'];
+            $userAnswer = $answer['answer'];
+            
+            // Find correct answer for this question
+            $correctAnswer = null;
+            foreach ($questions as $q) {
+                if ($q['id'] == $questionId) {
+                    $correctAnswer = $q['correct_answer'];
+                    break;
+                }
+            }
+            
+            // Check if answer is correct
+            $isCorrect = ($userAnswer === $correctAnswer) ? 1 : 0;  // Change to integer
+            if ($isCorrect) {
+                $correctAnswers++;
+            }
+            
+            $questionResults[] = [
+                'question_id' => $questionId,
+                'user_answer' => $userAnswer,
+                'is_correct' => $isCorrect  // Now storing 1 or 0
+            ];
+        }
+        
+        // Calculate score percentage
+        $score = ($correctAnswers / $totalQuestions) * 100;
+        
+        // Insert exam result with JSON answers
+        $stmt = $db->prepare("
+            INSERT INTO exam_results (
+                exam_id, 
+                user_id, 
+                score, 
+                time_spent, 
+                correct_answers, 
+                total_questions,
+                answers_json,
+                completed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ");
+        
+        $stmt->execute([
+            $examId,
+            $_SESSION['user_data']['id'] ?? 0,
+            $score,
+            $timeSpent,
+            $correctAnswers,
+            $totalQuestions,
+            $answersJson
+        ]);
+        
+        $resultId = $db->lastInsertId();
+        
+        // Insert detailed answers
+        $stmt = $db->prepare("
+            INSERT INTO exam_answers (
+                result_id, 
+                question_id, 
+                user_answer, 
+                is_correct
+            ) VALUES (?, ?, ?, ?)
+        ");
+        
+        foreach ($questionResults as $result) {
+            $stmt->execute([
+                $resultId,
+                $result['question_id'],
+                $result['user_answer'],
+                (int)$result['is_correct']  // Explicitly cast to integer
+            ]);
+        }
+        
+        $db->commit();
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'บันทึกคำตอบเรียบร้อยแล้ว',
+            'redirect_url' => "../../page/view/result.php?result_id=" . $resultId
+        ]);
+        
+    } catch (Exception $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        
+        echo json_encode([
+            'success' => false,
+            'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
         ]);
     }
 }

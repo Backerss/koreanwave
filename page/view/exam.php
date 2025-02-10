@@ -1,10 +1,21 @@
 <?php
 require_once '../../system/db.php';
 
+
+session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['user_data'])) {
+    header('Location: ../auth/login.html');
+    exit();
+}
+
 // Check if exam_id is provided
 if (!isset($_GET['exam_id'])) {
     die('กรุณาระบุแบบทดสอบ');
 }
+
+
 
 $examId = $_GET['exam_id'];
 

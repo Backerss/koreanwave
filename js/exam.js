@@ -1,6 +1,8 @@
 $(document).ready(function() {
     let timeLeft = 20 * 60; // 20 minutes in seconds
     let timer;
+    let examSubmitted = false;
+    let answeredQuestions = new Set(); // Track answered questions
 
     // Load exam data
     const urlParams = new URLSearchParams(window.location.search);
@@ -19,7 +21,7 @@ $(document).ready(function() {
 
                 // Render questions
                 const questionsHtml = response.questions.map((question, index) => `
-                    <div class="question-item mb-4">
+                    <div class="question-item" data-question-id="${question.id}">
                         <div class="question-header">
                             <span class="question-number">ข้อ ${index + 1}</span>
                             <span class="points">1 คะแนน</span>
@@ -28,28 +30,28 @@ $(document).ready(function() {
                             <p class="question-text">${question.question_text}</p>
                             <div class="options-group">
                                 <div class="option-item">
-                                    <input type="radio" name="q${question.id}" id="q${question.id}_a" value="A">
+                                    <input type="radio" name="q${question.id}" id="q${question.id}_a" value="A" class="exam-option" data-question-id="${question.id}">
                                     <label for="q${question.id}_a">
                                         <span class="option-letter">A</span>
                                         <span class="option-text">${question.option_a}</span>
                                     </label>
                                 </div>
                                 <div class="option-item">
-                                    <input type="radio" name="q${question.id}" id="q${question.id}_b" value="B">
+                                    <input type="radio" name="q${question.id}" id="q${question.id}_b" value="B" class="exam-option" data-question-id="${question.id}">
                                     <label for="q${question.id}_b">
                                         <span class="option-letter">B</span>
                                         <span class="option-text">${question.option_b}</span>
                                     </label>
                                 </div>
                                 <div class="option-item">
-                                    <input type="radio" name="q${question.id}" id="q${question.id}_c" value="C">
+                                    <input type="radio" name="q${question.id}" id="q${question.id}_c" value="C" class="exam-option" data-question-id="${question.id}">
                                     <label for="q${question.id}_c">
                                         <span class="option-letter">C</span>
                                         <span class="option-text">${question.option_c}</span>
                                     </label>
                                 </div>
                                 <div class="option-item">
-                                    <input type="radio" name="q${question.id}" id="q${question.id}_d" value="D">
+                                    <input type="radio" name="q${question.id}" id="q${question.id}_d" value="D" class="exam-option" data-question-id="${question.id}">
                                     <label for="q${question.id}_d">
                                         <span class="option-letter">D</span>
                                         <span class="option-text">${question.option_d}</span>
@@ -61,8 +63,17 @@ $(document).ready(function() {
                 `).join('');
 
                 $('.questions-container').html(questionsHtml);
+                
+                // Add event listener for radio buttons
+                $('.exam-option').change(function() {
+                    const questionId = $(this).data('question-id');
+                    answeredQuestions.add(questionId);
+                    updateProgress();
+                });
+
                 startTimer();
                 updateProgress();
+                checkSubmitButton();
             } else {
                 Swal.fire('ผิดพลาด', response.message, 'error');
             }
@@ -91,11 +102,32 @@ $(document).ready(function() {
 
     function updateProgress() {
         const totalQuestions = $('.question-item').length;
-        const answeredQuestions = $('input[type="radio"]:checked').length;
-        const percentage = (answeredQuestions / totalQuestions) * 100;
+        const answeredCount = answeredQuestions.size;
+        const percentage = (answeredCount / totalQuestions) * 100;
 
-        $('#answeredCount').text(`ตอบแล้ว ${answeredQuestions}/${totalQuestions} ข้อ`);
+        $('#answeredCount').text(`ตอบแล้ว ${answeredCount}/${totalQuestions} ข้อ`);
         $('.progress-bar').css('width', `${percentage}%`);
+        
+        checkSubmitButton();
+    }
+
+    function checkSubmitButton() {
+        const totalQuestions = $('.question-item').length;
+        const allAnswered = answeredQuestions.size === totalQuestions;
+        $('.submit-exam').prop('disabled', !allAnswered);
+    }
+
+    function collectAnswers() {
+        const answers = [];
+        $('.question-item').each(function() {
+            const questionId = $(this).find('input[type="radio"]').attr('name').replace('q', '');
+            const selectedAnswer = $(this).find('input[type="radio"]:checked').val();
+            answers.push({
+                question_id: questionId,
+                answer: selectedAnswer
+            });
+        });
+        return answers;
     }
 
     function autoSubmitExam() {
@@ -106,11 +138,18 @@ $(document).ready(function() {
             showConfirmButton: false,
             timer: 2000
         }).then(() => {
-            $('#examForm').submit();
+            submitExamAnswers();
         });
     }
 
     function submitExam() {
+        const totalQuestions = $('.question-item').length;
+        
+        if (answeredQuestions.size < totalQuestions) {
+            Swal.fire('คำเตือน', 'กรุณาตอบคำถามให้ครบทุกข้อ', 'warning');
+            return;
+        }
+
         Swal.fire({
             title: 'ยืนยันการส่งคำตอบ',
             text: 'คุณแน่ใจหรือไม่ที่จะส่งคำตอบ?',
@@ -120,27 +159,61 @@ $(document).ready(function() {
             cancelButtonText: 'ยกเลิก'
         }).then((result) => {
             if (result.isConfirmed) {
-                $('#examForm').submit();
+                submitExamAnswers();
+            }
+        });
+    }
+
+    function submitExamAnswers() {
+        const answers = collectAnswers();
+        examSubmitted = true;
+
+        $.ajax({
+            url: '../../system/manageExams.php',
+            method: 'POST',
+            data: {
+                action: 'submitExam',
+                exam_id: examId,
+                answers: JSON.stringify(answers),
+                time_spent: 20 * 60 - timeLeft
+            },
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        title: 'ส่งคำตอบสำเร็จ',
+                        text: 'ระบบได้บันทึกคำตอบของคุณแล้ว',
+                        icon: 'success',
+                        allowOutsideClick: false,
+                        confirmButtonText: 'ตกลง'
+                    }).then(() => {
+                        window.location.href = response.redirect_url;
+                    });
+                } else {
+                    Swal.fire('ผิดพลาด', response.message, 'error');
+                }
             }
         });
     }
 
     // Event Listeners
-    $('input[type="radio"]').change(updateProgress);
     $('.submit-exam').click(submitExam);
 
     // Initialize
     loadExam();
+    //checkSubmitButton();
 
-    // Prevent accidental leaving
-    window.onbeforeunload = function() {
-        return "คุณแน่ใจหรือไม่ที่จะออกจากหน้านี้? คำตอบของคุณอาจจะหายไป";
+    // Prevent page reload and navigation
+    window.onbeforeunload = function(e) {
+        if (!examSubmitted) {
+            e.preventDefault();
+            e.returnValue = 'การออกจากหน้านี้จะทำให้การทำแบบทดสอบไม่สมบูรณ์ คุณแน่ใจหรือไม่?';
+            return e.returnValue;
+        }
     };
 
-    // Cleanup
-    $(window).on('unload', function() {
-        if (timer) {
-            clearInterval(timer);
-        }
-    });
+    // Disable browser back button
+    history.pushState(null, null, location.href);
+    window.onpopstate = function(event) {
+        history.go(1);
+    };
 });
