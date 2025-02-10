@@ -44,6 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'loadExamQuestions':
                 loadExamQuestions($_GET['examId']);
                 break;
+            case 'getExamByLessonAndType':
+                getExamByLessonAndType($_GET['lessonId'], $_GET['examType']);
+                break;
         }
     }
 }
@@ -541,6 +544,31 @@ function submitExam($examId, $answersJson, $timeSpent) {
         echo json_encode([
             'success' => false,
             'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+        ]);
+    }
+}
+
+// เพิ่มฟังก์ชันสำหรับดึงข้อสอบตามบทเรียนและประเภท
+function getExamByLessonAndType($lessonId, $examType) {
+    global $db;
+    
+    try {
+        $stmt = $db->prepare("
+            SELECT id, exam_type
+            FROM exams 
+            WHERE lesson_id = ? AND exam_type = ?
+        ");
+        $stmt->execute([$lessonId, $examType]);
+        $exam = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'exam' => $exam
+        ]);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
         ]);
     }
 }

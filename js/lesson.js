@@ -12,7 +12,6 @@ window.vocabularyList = window.vocabularyList || [];
 window.audioPlayer = window.audioPlayer || null;
 
 function startLesson(lessonId) {
-    // เช็คสถานะการเรียน
     currentLessonId = lessonId;
     $.ajax({
         url: '../../system/checkLearn.php',
@@ -25,17 +24,33 @@ function startLesson(lessonId) {
             const result = JSON.parse(response);
             if (result.success) {
                 if (!result.hasPretest) {
-                    // ถ้ายังไม่ได้ทำแบบทดสอบก่อนเรียน
-                    Swal.fire({
-                        title: 'แบบทดสอบก่อนเรียน',
-                        text: 'คุณต้องทำแบบทดสอบก่อนเรียนก่อน',
-                        icon: 'info',
-                        showCancelButton: true,
-                        confirmButtonText: 'ทำแบบทดสอบ',
-                        cancelButtonText: 'ยกเลิก'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = `../view/exam.php?lesson_id=${lessonId}&type=pretest`;
+                    // ดึง exam_id ของแบบทดสอบก่อนเรียนของบทเรียนนี้
+                    $.ajax({
+                        url: '../../system/manageExams.php',
+                        type: 'GET',
+                        data: {
+                            action: 'getExamByLessonAndType',
+                            lessonId: lessonId,
+                            examType: 'pretest'
+                        },
+                        success: function(examResponse) {
+                            if (examResponse.success && examResponse.exam) {
+                                // ถ้ายังไม่ได้ทำแบบทดสอบก่อนเรียน
+                                Swal.fire({
+                                    title: 'แบบทดสอบก่อนเรียน',
+                                    text: 'คุณต้องทำแบบทดสอบก่อนเรียนก่อน',
+                                    icon: 'info',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'ทำแบบทดสอบ',
+                                    cancelButtonText: 'ยกเลิก'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href = `../view/exam.php?exam_id=${examResponse.exam.id}`;
+                                    }
+                                });
+                            } else {
+                                Swal.fire('ผิดพลาด', 'ไม่พบแบบทดสอบก่อนเรียน', 'error');
+                            }
                         }
                     });
                 } else {
