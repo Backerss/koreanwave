@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 09, 2025 at 06:07 AM
+-- Generation Time: Feb 10, 2025 at 02:52 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -34,6 +34,38 @@ CREATE TABLE `exams` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `exam_answers`
+--
+
+CREATE TABLE `exam_answers` (
+  `id` int NOT NULL,
+  `result_id` int NOT NULL,
+  `question_id` int NOT NULL,
+  `user_answer` char(1) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_correct` tinyint(1) DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `exam_results`
+--
+
+CREATE TABLE `exam_results` (
+  `id` int NOT NULL,
+  `exam_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `score` decimal(5,2) NOT NULL,
+  `time_spent` int NOT NULL,
+  `correct_answers` int NOT NULL,
+  `total_questions` int NOT NULL,
+  `answers_json` json DEFAULT NULL,
+  `completed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -136,6 +168,21 @@ ALTER TABLE `exams`
   ADD KEY `lesson_id` (`lesson_id`);
 
 --
+-- Indexes for table `exam_answers`
+--
+ALTER TABLE `exam_answers`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `result_id` (`result_id`),
+  ADD KEY `question_id` (`question_id`);
+
+--
+-- Indexes for table `exam_results`
+--
+ALTER TABLE `exam_results`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `exam_id` (`exam_id`);
+
+--
 -- Indexes for table `learning_progress`
 --
 ALTER TABLE `learning_progress`
@@ -181,6 +228,18 @@ ALTER TABLE `exams`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `exam_answers`
+--
+ALTER TABLE `exam_answers`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `exam_results`
+--
+ALTER TABLE `exam_results`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `learning_progress`
 --
 ALTER TABLE `learning_progress`
@@ -219,6 +278,19 @@ ALTER TABLE `vocabulary`
 --
 ALTER TABLE `exams`
   ADD CONSTRAINT `exams_ibfk_1` FOREIGN KEY (`lesson_id`) REFERENCES `lessons` (`id`);
+
+--
+-- Constraints for table `exam_answers`
+--
+ALTER TABLE `exam_answers`
+  ADD CONSTRAINT `exam_answers_ibfk_1` FOREIGN KEY (`result_id`) REFERENCES `exam_results` (`id`),
+  ADD CONSTRAINT `exam_answers_ibfk_2` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`);
+
+--
+-- Constraints for table `exam_results`
+--
+ALTER TABLE `exam_results`
+  ADD CONSTRAINT `exam_results_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`);
 
 --
 -- Constraints for table `learning_progress`

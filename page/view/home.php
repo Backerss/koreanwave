@@ -10,6 +10,8 @@ if (!isset($_SESSION['user_data'])) {
     header("Location: ../../page/auth/login.html");
     exit();
 }
+
+
 ?>
 
 <head>
