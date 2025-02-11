@@ -100,4 +100,46 @@ if ($action === 'update') {
     
     echo json_encode(['success' => true]);
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'checkExams') {
+    $lessonId = $_POST['lessonId'];
+    $userId = $_SESSION['user_data']['id'];
+
+    try {
+        // ตรวจสอบสถานะการทำแบบทดสอบจากตาราง learning_progress
+        $stmt = $db->prepare("
+            SELECT pretest_done, posttest_done 
+            FROM learning_progress 
+            WHERE user_id = ? AND lesson_id = ?
+        ");
+        $stmt->execute([$userId, $lessonId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$result) {
+            // ถ้ายังไม่มีข้อมูล สร้างใหม่
+            $stmt = $db->prepare("
+                INSERT INTO learning_progress (user_id, lesson_id, pretest_done, posttest_done)
+                VALUES (?, ?, 0, 0)
+            ");
+            $stmt->execute([$userId, $lessonId]);
+            
+            echo json_encode([
+                'success' => true,
+                'pretest_done' => false,
+                'posttest_done' => false
+            ]);
+        } else {
+            echo json_encode([
+                'success' => true,
+                'pretest_done' => (bool)$result['pretest_done'],
+                'posttest_done' => (bool)$result['posttest_done']
+            ]);
+        }
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
 ?>

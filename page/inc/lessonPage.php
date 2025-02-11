@@ -110,5 +110,43 @@
             </div>
             <?php endforeach; ?>
         </div>
+
+        <!-- เพิ่มส่วนแสดงสถานะการทำแบบทดสอบ -->
+        <div class="exam-status-section mt-4">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="exam-status-card pretest">
+                        <div class="exam-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="exam-info">
+                            <h5>แบบทดสอบก่อนเรียน</h5>
+                            <div class="exam-progress">
+                                <div class="status-indicator">
+                                    <i class="fas fa-circle-notch fa-spin d-none"></i>
+                                    <span class="status-text">กำลังตรวจสอบ...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="exam-status-card posttest">
+                        <div class="exam-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="exam-info">
+                            <h5>แบบทดสอบหลังเรียน</h5>
+                            <div class="exam-progress">
+                                <div class="status-indicator">
+                                    <i class="fas fa-circle-notch fa-spin d-none"></i>
+                                    <span class="status-text">กำลังตรวจสอบ...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

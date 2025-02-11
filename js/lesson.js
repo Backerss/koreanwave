@@ -13,6 +13,7 @@ window.audioPlayer = window.audioPlayer || null;
 
 function startLesson(lessonId) {
     currentLessonId = lessonId;
+    checkExamStatus(lessonId);  // เพิ่มบรรทัดนี้
     $.ajax({
         url: '../../system/checkLearn.php',
         type: 'POST',
@@ -176,7 +177,7 @@ function playVocabAudio() {
 
 function setupVocabNavigation(totalVocab) {
     const $prevBtn = $('.btn-prev');
-    const $nextBtn = $('.btn-next');
+    const $nextBtn = $('.btn-next'); // แก้ไขจาก .btn-next เป็น btn-next
     const $playBtn = $('.btn-play');
 
     updateNavigationState();
@@ -343,6 +344,56 @@ function checkLessonAccess(lessonId) {
                 icon: 'error',
                 confirmButtonText: 'ตกลง'
             });
+        }
+    });
+}
+
+function checkExamStatus(lessonId) {
+    $.ajax({
+        url: '../../system/checkLearn.php',
+        type: 'POST',
+        data: {
+            action: 'checkExams',
+            lessonId: lessonId
+        },
+        success: function(response) {
+            try {
+                const result = typeof response === 'string' ? JSON.parse(response) : response;
+                
+                // อัพเดทสถานะแบบทดสอบก่อนเรียน
+                const pretestCard = $('.exam-status-card.pretest');
+                if (result.pretest_done) {
+                    pretestCard.addClass('completed')
+                        .find('.status-text')
+                        .html('<i class="fas fa-check-circle text-success"></i> ทำแบบทดสอบแล้ว');
+                } else {
+                    pretestCard.addClass('not-started')
+                        .find('.status-text')
+                        .html('<i class="fas fa-exclamation-circle text-warning"></i> ยังไม่ได้ทำแบบทดสอบ');
+                }
+
+                // อัพเดทสถานะแบบทดสอบหลังเรียน
+                const posttestCard = $('.exam-status-card.posttest'); 
+                if (result.posttest_done) {
+                    posttestCard.addClass('completed')
+                        .find('.status-text')
+                        .html('<i class="fas fa-check-circle text-success"></i> ทำแบบทดสอบแล้ว');
+                } else if (result.pretest_done) {
+                    posttestCard.addClass('in-progress')
+                        .find('.status-text')
+                        .html('<i class="fas fa-clock text-primary"></i> พร้อมทำแบบทดสอบ');
+                } else {
+                    posttestCard.addClass('not-started')
+                        .find('.status-text')
+                        .html('<i class="fas fa-lock text-muted"></i> ต้องทำแบบทดสอบก่อนเรียนก่อน');
+                }
+            } catch (error) {
+                console.error('Error parsing response:', error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', error);
+            showError('ไม่สามารถตรวจสอบสถานะแบบทดสอบได้');
         }
     });
 }
