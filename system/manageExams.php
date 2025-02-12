@@ -57,69 +57,131 @@ function createExam() {
     try {
         $examData = json_decode($_POST['examData'], true);
         
-        if (!$examData || !isset($examData['lessonId']) || !isset($examData['examType']) || empty($examData['questions'])) {
-            throw new Exception('ข้อมูลไม่ครบถ้วน');
+        // ตรวจสอบข้อมูลที่จำเป็น
+        if (!validateExamData($examData)) {
+            throw new Exception('ข้อมูลไม่ครบถ้วนหรือไม่ถูกต้อง');
         }
 
         // ตรวจสอบว่ามีข้อสอบประเภทนี้อยู่แล้วหรือไม่
-        $stmt = $db->prepare("
-            SELECT COUNT(*) as count
-            FROM exams
-            WHERE lesson_id = ? AND exam_type = ?
-        ");
-        $stmt->execute([$examData['lessonId'], $examData['examType']]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($result['count'] > 0) {
+        if (examExists($examData['lessonId'], $examData['examType'])) {
             throw new Exception('บทเรียนนี้มีข้อสอบประเภทนี้อยู่แล้ว');
         }
 
-        // เริ่ม transaction
         $db->beginTransaction();
 
         // สร้างข้อสอบใหม่
-        $stmt = $db->prepare("INSERT INTO exams (lesson_id, exam_type) VALUES (?, ?)");
-        $stmt->execute([$examData['lessonId'], $examData['examType']]);
-        $examId = $db->lastInsertId();
+        $examId = insertExam($examData['lessonId'], $examData['examType']);
 
-        // เพิ่มคำถามทีละข้อ
-        $stmt = $db->prepare("
-            INSERT INTO questions (
-                exam_id, question_text, 
-                option_a, option_b, option_c, option_d, 
-                correct_answer
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
+        // เพิ่มคำถามทั้งหมด
+        insertQuestions($examId, $examData['questions']);
 
-        foreach ($examData['questions'] as $question) {
-            $stmt->execute([
-                $examId,
-                $question['questionText'],
-                $question['optionA'],
-                $question['optionB'],
-                $question['optionC'],
-                $question['optionD'],
-                $question['correctAnswer']
-            ]);
-        }
-
-        // ยืนยัน transaction
         $db->commit();
 
         echo json_encode([
             'success' => true,
-            'message' => 'บันทึกข้อสอบเรียบร้อยแล้ว'
+            'message' => 'บันทึกข้อสอบเรียบร้อยแล้ว',
+            'examId' => $examId
         ]);
 
     } catch (Exception $e) {
-        // ถ้าเกิดข้อผิดพลาดให้ rollback
         if ($db->inTransaction()) {
             $db->rollBack();
         }
-
         echo json_encode([
             'success' => false,
             'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+        ]);
+    }
+}
+
+// ฟังก์ชันตรวจสอบความถูกต้องของข้อมูลข้อสอบ
+function validateExamData($examData) {
+    if (!isset($examData['lessonId']) || !isset($examData['examType']) || empty($examData['questions'])) {
+        return false;
+    }
+
+    if (!in_array($examData['examType'], ['pretest', 'posttest'])) {
+        return false;
+    }
+
+    foreach ($examData['questions'] as $question) {
+        if (!validateQuestionData($question)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// ฟังก์ชันตรวจสอบความถูกต้องของข้อมูลคำถาม
+function validateQuestionData($question) {
+    $requiredFields = ['questionText', 'optionA', 'optionB', 'optionC', 'optionD', 'correctAnswer'];
+    
+    foreach ($requiredFields as $field) {
+        if (!isset($question[$field]) || trim($question[$field]) === '') {
+            return false;
+        }
+    }
+
+    if (!in_array($question['correctAnswer'], ['A', 'B', 'C', 'D'])) {
+        return false;
+    }
+
+    return true;
+}
+
+// ฟังก์ชันตรวจสอบว่ามีข้อสอบอยู่แล้วหรือไม่
+function examExists($lessonId, $examType) {
+    global $db;
+    
+    $stmt = $db->prepare("
+        SELECT COUNT(*) 
+        FROM exams 
+        WHERE lesson_id = ? AND exam_type = ?
+    ");
+    $stmt->execute([$lessonId, $examType]);
+    
+    return $stmt->fetchColumn() > 0;
+}
+
+// ฟังก์ชันเพิ่มข้อสอบ
+function insertExam($lessonId, $examType) {
+    global $db;
+    
+    $stmt = $db->prepare("
+        INSERT INTO exams (lesson_id, exam_type, created_at) 
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+    ");
+    $stmt->execute([$lessonId, $examType]);
+    
+    return $db->lastInsertId();
+}
+
+// ฟังก์ชันเพิ่มคำถาม
+function insertQuestions($examId, $questions) {
+    global $db;
+    
+    $stmt = $db->prepare("
+        INSERT INTO questions (
+            exam_id, 
+            question_text,
+            option_a, 
+            option_b, 
+            option_c, 
+            option_d,
+            correct_answer
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ");
+
+    foreach ($questions as $question) {
+        $stmt->execute([
+            $examId,
+            trim($question['questionText']),
+            trim($question['optionA']),
+            trim($question['optionB']),
+            trim($question['optionC']),
+            trim($question['optionD']),
+            $question['correctAnswer']
         ]);
     }
 }
@@ -254,34 +316,50 @@ function deleteQuestion($questionId) {
     }
 }
 
-// เพิ่มฟังก์ชันสำหรับเพิ่มคำถามใหม่
+// แก้ไขฟังก์ชัน addQuestion ให้มีการตรวจสอบที่ดีขึ้น
 function addQuestion($questionDataJson) {
     global $db;
     
     try {
         $questionData = json_decode($questionDataJson, true);
         
+        if (!validateQuestionData($questionData)) {
+            throw new Exception('ข้อมูลคำถามไม่ครบถ้วนหรือไม่ถูกต้อง');
+        }
+
+        // ตรวจสอบว่าข้อสอบยังมีอยู่หรือไม่
+        $stmt = $db->prepare("SELECT COUNT(*) FROM exams WHERE id = ?");
+        $stmt->execute([$questionData['examId']]);
+        if ($stmt->fetchColumn() == 0) {
+            throw new Exception('ไม่พบข้อสอบที่ต้องการเพิ่มคำถาม');
+        }
+
         $stmt = $db->prepare("
             INSERT INTO questions (
-                exam_id, question_text,
-                option_a, option_b, option_c, option_d,
+                exam_id,
+                question_text,
+                option_a,
+                option_b,
+                option_c,
+                option_d,
                 correct_answer
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
         ");
         
         $stmt->execute([
             $questionData['examId'],
-            $questionData['questionText'],
-            $questionData['optionA'],
-            $questionData['optionB'],
-            $questionData['optionC'],
-            $questionData['optionD'],
+            trim($questionData['questionText']),
+            trim($questionData['optionA']),
+            trim($questionData['optionB']),
+            trim($questionData['optionC']),
+            trim($questionData['optionD']),
             $questionData['correctAnswer']
         ]);
         
         echo json_encode([
             'success' => true,
-            'message' => 'เพิ่มข้อสอบเรียบร้อยแล้ว'
+            'message' => 'เพิ่มคำถามเรียบร้อยแล้ว',
+            'questionId' => $db->lastInsertId()
         ]);
     } catch (Exception $e) {
         echo json_encode([

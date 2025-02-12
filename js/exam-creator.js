@@ -1,164 +1,351 @@
+let questionTemplateCache = '';
+let examId = null;
+let questionCounter = 0; // เพิ่มตัวนับจำนวนข้อสอบ
+
 $(document).ready(function() {
-  // โหลดรายการบทเรียนและข้อสอบเมื่อเปิดหน้า
-  loadLessons();
-  loadExamList();
-
-  // Event handlers
-  $('#examType, #lessonSelect').on('change', validateExamForm);
-  $('#addQuestion').on('click', addNewQuestion);
-  $('#saveExam').on('click', saveExam);
-  $('#examListLessonSelect').on('change', function() {
-    loadExamList($(this).val());
-  });
-
-  // จัดการการลบข้อสอบ
-  $(document).on('click', '.remove-question', function() {
-    $(this).closest('.question-builder').remove();
-    updateQuestionNumbers();
-  });
+    // เก็บ template HTML ไว้ใช้งานครั้งเดียวตอน initialize
+    questionTemplateCache = $('#questionTemplate').html();
+    if (!questionTemplateCache) {
+        console.error('ไม่พบ template สำหรับสร้างข้อสอบ');
+        return;
+    }
+    
+    initializeExamCreator();
+    bindEventHandlers();
 });
 
-// แก้ไขฟังก์ชัน loadLessons
-function loadLessons() {
-  $.get('../../system/manageCourses.php', { action: 'get' }, function (response) {
-    if (response.success) {
-      const lessonSelect = $('#lessonSelect');
-      lessonSelect.empty().append('<option value="">เลือกบทเรียน</option>');
+// แก้ไขฟังก์ชัน initializeExamCreator
+function initializeExamCreator() {
+    // ไม่ต้องเก็บ template ซ้ำ
+    loadLessons();
+    loadExamList();
+    validateExamForm();
+    
+    // Reset counters
+    questionCounter = 0;
+    
+    // ปิดปุ่มเพิ่มข้อสอบและบันทึกไว้ก่อน
+    $('#addQuestion, #saveExam').prop('disabled', true);
+}
 
-      // ดึงรายการข้อสอบที่มีอยู่แล้ว
-      $.get('../../system/manageExams.php', { action: 'getExistingExams' }, function(examResponse) {
-        if (examResponse.success) {
-          const existingExams = examResponse.existingExams;
-
-          response.courses.forEach(course => {
-            // ตรวจสอบว่าบทเรียนนี้มีข้อสอบประเภทที่เลือกแล้วหรือไม่
-            const examType = $('#examType').val();
-            const hasExam = existingExams.some(exam => 
-              exam.lesson_id === course.id && 
-              exam.exam_type === examType
-            );
-
-            // ถ้ายังไม่มีข้อสอบประเภทนี้ ให้แสดงในตัวเลือก
-            if (!hasExam) {
-              lessonSelect.append(`<option value="${course.id}">${course.title}</option>`);
-            }
-          });
+// แก้ไขฟังก์ชัน bindEventHandlers
+function bindEventHandlers() {
+    // Form controls
+    $('#examType, #lessonSelect').off('change').on('change', function() {
+        if ($(this).attr('id') === 'examType') {
+            loadLessons();
         }
-      });
+        validateExamForm();
+    });
+
+    // ปรับปรุงการ bind event สำหรับปุ่มเพิ่มข้อสอบ
+    $('#addQuestion').off('click').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation(); // ป้องกันการ trigger event ซ้ำ
+        addNewQuestion();
+    });
+
+    // ปรับปรุงการ bind event สำหรับปุ่มบันทึก
+    $('#saveExam').off('click').on('click', function(e) {
+        e.preventDefault();
+        saveExam();
+    });
+    
+    // Question management - ใช้ event delegation แทน
+    $(document).off('click', '.remove-question').on('click', '.remove-question', function(e) {
+        e.preventDefault();
+        $(this).closest('.question-builder').remove();
+        updateQuestionNumbers();
+        updateSaveButtonState();
+        updateQuestionCount(); // เพิ่มการอัพเดทจำนวนข้อ
+    });
+    
+    // จัดการการเปลี่ยนแปลงของฟอร์ม
+    $(document).off('input change', '.question-text, .option-input, .correct-option')
+        .on('input change', '.question-text, .option-input, .correct-option', function() {
+            updateSaveButtonState();
+    });
+
+    // Clear validation
+    $(document).off('input', '.question-text, .option-input')
+        .on('input', '.question-text, .option-input', function() {
+            $(this).removeClass('is-invalid');
+    });
+
+    $(document).off('change', '.correct-option')
+        .on('change', '.correct-option', function() {
+            $(this).closest('.question-builder').find('.correct-answer').removeClass('is-invalid');
+    });
+
+    // Exam list filter
+    $('#examListLessonSelect').off('change').on('change', function() {
+        loadExamList($(this).val());
+    });
+
+    // แก้ไขฟังก์ชัน updateQuestionNumbers
+    function updateQuestionNumbers() {
+        $('.question-builder').each(function(index) {
+            const number = index + 1;
+            $(this).find('.question-number').text(`ข้อที่ ${number}`);
+            
+            // อัพเดท name และ id ของ radio buttons
+            $(this).find('.correct-option').each(function() {
+                const newName = `correct_${number}`;
+                const newId = `correct_${number}_${$(this).val()}`;
+                $(this).attr('name', newName).attr('id', newId);
+                $(this).next('label').attr('for', newId);
+            });
+        });
     }
-  });
 }
 
-// ตรวจสอบความถูกต้องของฟอร์ม
+async function loadLessons() {
+    try {
+        const response = await $.get('../../system/manageCourses.php', { action: 'get' });
+        if (!response.success) throw new Error(response.message);
+
+        const examType = $('#examType').val();
+        if (!examType) return; // ถ้ายังไม่ได้เลือกประเภทข้อสอบให้ return ออก
+
+        const existingExams = await $.get('../../system/manageExams.php', { 
+            action: 'getExistingExams' 
+        });
+
+        const lessonSelect = $('#lessonSelect');
+        const currentValue = lessonSelect.val(); // เก็บค่าปัจจุบันไว้
+        
+        lessonSelect.empty().append('<option value="">เลือกบทเรียน</option>');
+
+        response.courses.forEach(course => {
+            const hasExam = existingExams.existingExams.some(exam => 
+                exam.lesson_id === course.id && 
+                exam.exam_type === examType
+            );
+            
+            if (!hasExam) {
+                lessonSelect.append(`
+                    <option value="${course.id}">${course.title}</option>
+                `);
+            }
+        });
+
+        // ถ้ามีค่าเดิมและยังเลือกได้อยู่ ให้เลือกค่าเดิม
+        if (currentValue && lessonSelect.find(`option[value="${currentValue}"]`).length) {
+            lessonSelect.val(currentValue);
+        }
+
+    } catch (error) {
+        showError('ไม่สามารถโหลดรายการบทเรียนได้');
+        console.error(error);
+    }
+}
+
 function validateExamForm() {
-  const examType = $('#examType').val();
-  const lessonId = $('#lessonSelect').val();
-  const isValid = examType && lessonId;
+    const examType = $('#examType').val();
+    const lessonId = $('#lessonSelect').val();
+    const $addQuestionBtn = $('#addQuestion');
+    const $questionList = $('#questionList');
+    const $saveExamBtn = $('#saveExam');
 
-  const $addQuestion = $('#addQuestion');
-  const $saveExam = $('#saveExam');
-  const $questionList = $('#questionList');
+    // ตรวจสอบค่าที่จำเป็น
+    const isValid = Boolean(examType && lessonId);
 
-  $addQuestion.prop('disabled', !isValid);
-  $saveExam.prop('disabled', !isValid);
-  $questionList.toggle(isValid);
+    // จัดการปุ่มและการแสดงผล
+    $addQuestionBtn.prop('disabled', !isValid);
 
-  return isValid;
+    // ตรวจสอบและจัดการ questionList
+    if (!isValid) {
+        $questionList.hide().html(`
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                กรุณาเลือกประเภทข้อสอบและบทเรียนก่อนสร้างข้อสอบ
+            </div>
+        `);
+        $saveExamBtn.prop('disabled', true);
+    } else {
+        // ถ้าข้อมูลถูกต้อง แต่ยังไม่มีข้อสอบ
+        if ($('.question-builder').length === 0) {
+            $questionList.show().html(`
+                <div class="alert alert-info">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    คลิกปุ่ม "เพิ่มข้อสอบ" เพื่อเริ่มสร้างข้อสอบ
+                </div>
+            `);
+        }
+        $questionList.show();
+    }
+
+    // อัพเดทจำนวนข้อสอบ
+    updateQuestionCount();
+
+    return isValid;
 }
 
-// เพิ่มข้อสอบใหม่
+// แก้ไขฟังก์ชัน addNewQuestion
 function addNewQuestion() {
-  const questionCount = $('.question-builder').length + 1;
-  const template = $('#questionTemplate').html()
-    .replace(/{number}/g, questionCount);
-
-  $('#questionList').append(template);
-  updateQuestionNumbers();
-}
-
-// อัพเดตเลขข้อของข้อสอบ
-function updateQuestionNumbers() {
-  $('.question-builder').each((index, element) => {
-    $(element).find('.question-number').text(`ข้อที่ ${index + 1}`);
-    $(element).find('.correct-option').attr('name', `correct_${index + 1}`);
-  });
-}
-
-// บันทึกข้อสอบ
-function saveExam() {
-  const examData = {
-    lessonId: $('#lessonSelect').val(),
-    examType: $('#examType').val(),
-    questions: []
-  };
-
-  // ตรวจสอบความถูกต้องของข้อมูล
-  let isValid = true;
-  $('.question-builder').each(function () {
-    const questionText = $(this).find('.question-text').val().trim();
-    const options = {};
-    let hasCorrectAnswer = false;
-
-    $(this).find('.option-input').each(function () {
-      const option = $(this).data('option');
-      const value = $(this).val().trim();
-      options[option] = value;
-
-      if (!value) isValid = false;
-    });
-
-    const correctAnswer = $(this).find('.correct-option:checked').val();
-    if (correctAnswer) hasCorrectAnswer = true;
-
-    if (!questionText || !hasCorrectAnswer) {
-      isValid = false;
+    if (!validateExamForm()) {
+        showError('กรุณาเลือกประเภทข้อสอบและบทเรียนก่อน');
+        return;
     }
 
-    examData.questions.push({
-      questionText: questionText,
-      optionA: options.A,
-      optionB: options.B,
-      optionC: options.C,
-      optionD: options.D,
-      correctAnswer: correctAnswer
-    });
-  });
+    const currentQuestionCount = $('.question-builder').length;
+    const nextQuestionNumber = currentQuestionCount + 1;
+    
+    const newQuestionHtml = questionTemplateCache.replace(/{number}/g, nextQuestionNumber);
+    const $newQuestion = $(newQuestionHtml);
+    
+    $('#questionList').append($newQuestion);
+    
+    // อัพเดทหมายเลขข้อและ state ต่างๆ
+    updateQuestionNumbers();
+    updateSaveButtonState();
+    updateQuestionCount(); // เพิ่มการอัพเดทจำนวนข้อ
 
-  if (!isValid || examData.questions.length === 0) {
+    // Focus on new question
+    $newQuestion.find('.question-text').focus();
+}
+
+// แก้ไขฟังก์ชัน validateQuestion
+function validateQuestion($question) {
+    const isValid = checkQuestionValidity($question);
+    $question.toggleClass('is-invalid', !isValid);
+    return isValid;
+}
+
+// แก้ไขฟังก์ชัน checkQuestionValidity
+function checkQuestionValidity($question) {
+    try {
+        const questionText = $question.find('.question-text').val()?.trim() || '';
+        const options = $question.find('.option-input').map(function() {
+            return $(this).val()?.trim() || '';
+        }).get();
+        const hasCorrectAnswer = $question.find('.correct-option:checked').length > 0;
+
+        // แสดง validation feedback
+        $question.find('.question-text').toggleClass('is-invalid', !questionText);
+        $question.find('.option-input').each(function(idx) {
+            $(this).toggleClass('is-invalid', !options[idx]);
+        });
+        $question.find('.correct-answer').toggleClass('is-invalid', !hasCorrectAnswer);
+
+        return questionText && 
+               options.every(opt => opt.length > 0) && 
+               hasCorrectAnswer;
+    } catch (error) {
+        console.error('Error in checkQuestionValidity:', error);
+        return false;
+    }
+}
+
+// แก้ไขฟังก์ชัน updateSaveButtonState
+function updateSaveButtonState() {
+    const $questions = $('.question-builder');
+    const hasQuestions = $questions.length > 0;
+    
+    // ตรวจสอบความถูกต้องของทุกข้อโดยตรง ไม่ผ่าน validateQuestion
+    const allQuestionsValid = $questions.toArray().every(question => {
+        const $q = $(question);
+        const questionText = $q.find('.question-text').val()?.trim() || '';
+        const options = $q.find('.option-input').map(function() {
+            return $(this).val()?.trim() || '';
+        }).get();
+        const hasCorrectAnswer = $q.find('.correct-option:checked').length > 0;
+
+        return questionText && 
+               options.every(opt => opt.length > 0) && 
+               hasCorrectAnswer;
+    });
+    
+    $('#saveExam').prop('disabled', !allQuestionsValid || !hasQuestions);
+}
+
+async function saveExam() {
+    try {
+        const examData = collectExamData();
+        
+        // ตรวจสอบจำนวนข้อขั้นต่ำ
+        if (examData.questions.length === 0) {
+            throw new Error('กรุณาเพิ่มข้อสอบอย่างน้อย 1 ข้อ');
+        }
+
+        // ตรวจสอบความถูกต้องของทุกข้อ
+        const invalidQuestions = examData.questions.filter(q => !validateQuestionData(q));
+        if (invalidQuestions.length > 0) {
+            throw new Error('กรุณากรอกข้อมูลให้ครบทุกข้อ');
+        }
+
+        showLoading('กำลังบันทึกข้อสอบ...');
+
+        const response = await $.ajax({
+            url: '../../system/manageExams.php',
+            method: 'POST',
+            data: { 
+                action: 'create', 
+                examData: JSON.stringify(examData) 
+            }
+        });
+
+        if (response.success) {
+            await Swal.fire({
+                icon: 'success',
+                title: 'บันทึกสำเร็จ',
+                text: 'บันทึกข้อสอบเรียบร้อยแล้ว'
+            });
+            
+            resetForm();
+            loadExamList();
+        } else {
+            throw new Error(response.message);
+        }
+
+    } catch (error) {
+        showError(error.message || 'ไม่สามารถบันทึกข้อสอบได้');
+    }
+}
+
+function collectExamData() {
+    return {
+        lessonId: $('#lessonSelect').val(),
+        examType: $('#examType').val(),
+        questions: $('.question-builder').map(function() {
+            const $q = $(this);
+            return {
+                questionText: $q.find('.question-text').val().trim(),
+                optionA: $q.find('[data-option="A"]').val().trim(),
+                optionB: $q.find('[data-option="B"]').val().trim(),
+                optionC: $q.find('[data-option="C"]').val().trim(),
+                optionD: $q.find('[data-option="D"]').val().trim(),
+                correctAnswer: $q.find('.correct-option:checked').val()
+            };
+        }).get()
+    };
+}
+
+function showLoading(message) {
     Swal.fire({
-      icon: 'error',
-      title: 'ข้อมูลไม่ครบถ้วน',
-      text: 'กรุณากรอกข้อมูลให้ครบทุกช่องและเลือกคำตอบที่ถูกต้อง'
+        title: message,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
     });
-    return;
-  }
+}
 
-  // ส่งข้อมูลไปบันทึก
-  $.ajax({
-    url: '../../system/manageExams.php',
-    method: 'POST',
-    data: { action: 'create', examData: JSON.stringify(examData) },
-    success: function (response) {
-      if (response.success) {
-        Swal.fire({
-          icon: 'success',
-          title: 'บันทึกสำเร็จ',
-          text: 'บันทึกข้อสอบเรียบร้อยแล้ว'
-        }).then(() => {
-          // รีเซ็ตฟอร์ม
-          $('#examForm').trigger('reset');
-          $('#questionList').empty();
-          validateExamForm();
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'เกิดข้อผิดพลาด',
-          text: response.message || 'ไม่สามารถบันทึกข้อสอบได้'
-        });
-      }
-    }
-  });
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: message,
+        confirmButtonText: 'ตกลง'
+    });
+}
+
+// แก้ไขฟังก์ชัน resetForm
+function resetForm() {
+    $('#examForm')[0].reset();
+    $('#questionList').empty();
+    updateQuestionCount(); // เพิ่มการอัพเดทจำนวนข้อ
+    validateExamForm();
 }
 
 // เพิ่มฟังก์ชันสำหรับโหลดรายการข้อสอบ
@@ -667,3 +854,25 @@ $('#examType').change(function() {
   loadLessons(); // โหลดรายการบทเรียนใหม่เมื่อเปลี่ยนประเภทข้อสอบ
   validateExamForm();
 });
+
+// เพิ่มฟังก์ชันอัพเดทหมายเลขข้อสอบ
+function updateQuestionNumbers() {
+    $('.question-builder').each(function(index) {
+        const number = index + 1;
+        $(this).find('.question-number').text(`ข้อที่ ${number}`);
+        
+        // อัพเดท name ของ radio buttons
+        $(this).find('.correct-option').each(function() {
+            const oldName = $(this).attr('name');
+            const newName = `correct_${number}`;
+            $(this).attr('name', newName);
+            $(this).next('label').attr('for', $(this).attr('id').replace(/\d+/, number));
+        });
+    });
+}
+
+// เพิ่มฟังก์ชันสำหรับอัพเดทจำนวนข้อสอบ
+function updateQuestionCount() {
+    const questionCount = $('.question-builder').length;
+    $('#questionCount').text(`${questionCount} ข้อ`);
+}
