@@ -99,17 +99,27 @@ $(document).ready(function() {
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "ทั้งหมด"]],
         responsive: true,
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/th.json',
-            lengthMenu: "แสดง _MENU_ รายการ",
-            search: "ค้นหา:",
-            info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
-            infoEmpty: "แสดง 0 ถึง 0 จาก 0 รายการ",
-            infoFiltered: "(กรองจากทั้งหมด _MAX_ รายการ)",
-            paginate: {
-                first: "หน้าแรก",
-                last: "หน้าสุดท้าย",
-                next: "ถัดไป",
-                previous: "ก่อนหน้า"
+            "decimal": "",
+            "emptyTable": "ไม่มีข้อมูลในตาราง",
+            "info": "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+            "infoEmpty": "แสดง 0 ถึง 0 จาก 0 รายการ",
+            "infoFiltered": "(กรองจากทั้งหมด _MAX_ รายการ)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "แสดง _MENU_ รายการ",
+            "loadingRecords": "กำลังโหลด...",
+            "processing": "กำลังดำเนินการ...",
+            "search": "ค้นหา:",
+            "zeroRecords": "ไม่พบข้อมูลที่ตรงกัน",
+            "paginate": {
+                "first": "หน้าแรก",
+                "last": "หน้าสุดท้าย",
+                "next": "ถัดไป",
+                "previous": "ก่อนหน้า"
+            },
+            "aria": {
+                "sortAscending": ": เรียงจากน้อยไปมาก",
+                "sortDescending": ": เรียงจากมากไปน้อย"
             }
         }
     });
@@ -147,7 +157,7 @@ $(document).ready(function() {
         return true;
     });
 
-    // Add user handler
+    // Update the save user handler
     $('#saveUser').click(function() {
         const form = $('#addUserForm');
         if (!form[0].checkValidity()) {
@@ -155,9 +165,22 @@ $(document).ready(function() {
             return;
         }
 
+        // Get form data
         const formData = new FormData(form[0]);
         formData.append('action', 'add');
 
+        // Show loading state
+        Swal.fire({
+            title: 'กำลังดำเนินการ',
+            text: 'กรุณารอสักครู่...',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Send request
         $.ajax({
             url: '../../system/manageUsers.php',
             type: 'POST',
@@ -169,7 +192,9 @@ $(document).ready(function() {
                     Swal.fire({
                         icon: 'success',
                         title: 'สำเร็จ',
-                        text: 'เพิ่มผู้ใช้เรียบร้อยแล้ว'
+                        text: 'เพิ่มผู้ใช้เรียบร้อยแล้ว',
+                        showConfirmButton: false,
+                        timer: 1500
                     });
                     $('#addUserModal').modal('hide');
                     form[0].reset();
@@ -178,11 +203,32 @@ $(document).ready(function() {
                     Swal.fire({
                         icon: 'error',
                         title: 'ผิดพลาด',
-                        text: response.message
+                        text: response.message || 'ไม่สามารถเพิ่มผู้ใช้ได้'
                     });
                 }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
+                });
             }
         });
+    });
+
+    // Add role-based field visibility
+    $('#addUserForm [name="role"]').change(function() {
+        const role = $(this).val();
+        const studentFields = $('#addUserForm [name="student_id"], #addUserForm [name="grade_level"], #addUserForm [name="classroom"]').closest('.mb-3');
+        
+        if (role === 'student') {
+            studentFields.slideDown();
+            $('#addUserForm [name="student_id"]').prop('required', true);
+        } else {
+            studentFields.slideUp();
+            $('#addUserForm [name="student_id"]').prop('required', false);
+        }
     });
 
     // Edit user handler

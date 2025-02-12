@@ -37,8 +37,23 @@ try {
         case 'POST':
             switch ($_POST['action']) {
                 case 'add':
-                    // Validate student_id uniqueness
-                    if (!empty($_POST['student_id'])) {
+                    // Validate required fields
+                    if (empty($_POST['first_name']) || empty($_POST['last_name']) || empty($_POST['role']) || empty($_POST['password'])) {
+                        throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วน');
+                    }
+
+                    // Validate student_id format and uniqueness for students
+                    if ($_POST['role'] === 'student') {
+                        if (empty($_POST['student_id'])) {
+                            throw new Exception('กรุณากรอกรหัสนักเรียน');
+                        }
+                        
+                        // Check student ID format (5 digits)
+                        if (!preg_match('/^\d{5}$/', $_POST['student_id'])) {
+                            throw new Exception('รหัสนักเรียนต้องเป็นตัวเลข 5 หลัก');
+                        }
+
+                        // Check if student ID already exists
                         $stmt = $db->prepare("SELECT COUNT(*) FROM users WHERE student_id = ?");
                         $stmt->execute([$_POST['student_id']]);
                         if ($stmt->fetchColumn() > 0) {
@@ -46,24 +61,34 @@ try {
                         }
                     }
 
+                    // Validate password
+                    if (strlen($_POST['password']) < 6) {
+                        throw new Exception('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+                    }
+
+                    // Insert user
                     $sql = "INSERT INTO users (
                         student_id, first_name, last_name, 
                         grade_level, classroom, role, 
                         password_hash, created_at, updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
-                    $stmt = $db->prepare($sql);
-                    $stmt->execute([
-                        $_POST['student_id'] ?: null,
-                        $_POST['first_name'],
-                        $_POST['last_name'],
-                        $_POST['grade_level'] ?: null,
-                        $_POST['classroom'] ?: null,
-                        $_POST['role'],
-                        password_hash($_POST['password'], PASSWORD_DEFAULT)
-                    ]);
+                    try {
+                        $stmt = $db->prepare($sql);
+                        $stmt->execute([
+                            $_POST['role'] === 'student' ? $_POST['student_id'] : null,
+                            $_POST['first_name'],
+                            $_POST['last_name'],
+                            $_POST['role'] === 'student' ? $_POST['grade_level'] : null,
+                            $_POST['role'] === 'student' ? $_POST['classroom'] : null,
+                            $_POST['role'],
+                            password_hash($_POST['password'], PASSWORD_DEFAULT)
+                        ]);
 
-                    echo json_encode(['success' => true]);
+                        echo json_encode(['success' => true]);
+                    } catch (PDOException $e) {
+                        throw new Exception('ไม่สามารถบันทึกข้อมูลได้: ' . $e->getMessage());
+                    }
                     break;
 
                 case 'update':

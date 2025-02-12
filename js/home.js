@@ -52,9 +52,6 @@ $(document).ready(function () {
             // Map pages to their CSS files
             const styleMap = {
                 'profile': '../../css/profile.css',
-                'courses': '../../css/courses.css',
-                'examCreator': '../../css/examCreator.css',
-                'attendance': '../../css/attendance.css',
                 'users': '../../css/userManagement.css',
                 'grades': '../../css/gradesPage.css',
                 'lesson': '../../css/lessonpage.css',
@@ -288,12 +285,6 @@ $(document).ready(function () {
 
         const clockInterval = setInterval(updateClock, 1000);
         updateClock();
-
-
-        // Initialize charts when grades page is shown
-        $('.sidebar-menu li[data-page="grades"]').on('click', function () {
-            setTimeout(initGradeCharts, 100);
-        });
 
         // Handle Profile Image Upload
         $('#profileImageUpload').on('change', function () {

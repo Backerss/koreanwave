@@ -1,7 +1,10 @@
-let questionTemplateCache = '';
-let examId = null;
-let questionCounter = 0; // เพิ่มตัวนับจำนวนข้อสอบ
+// Global variables
+// Global variables
+window.questionTemplateCache = window.questionTemplateCache || '';
+window.examId = window.examId || null;
+window.questionCounter = window.questionCounter || 0;
 
+// Initialize when document ready
 $(document).ready(function() {
     // เก็บ template HTML ไว้ใช้งานครั้งเดียวตอน initialize
     questionTemplateCache = $('#questionTemplate').html();
@@ -14,21 +17,16 @@ $(document).ready(function() {
     bindEventHandlers();
 });
 
-// แก้ไขฟังก์ชัน initializeExamCreator
+// ฟังก์ชัน Initialize
 function initializeExamCreator() {
-    // ไม่ต้องเก็บ template ซ้ำ
     loadLessons();
     loadExamList();
     validateExamForm();
-    
-    // Reset counters
     questionCounter = 0;
-    
-    // ปิดปุ่มเพิ่มข้อสอบและบันทึกไว้ก่อน
     $('#addQuestion, #saveExam').prop('disabled', true);
 }
 
-// แก้ไขฟังก์ชัน bindEventHandlers
+// Event handlers
 function bindEventHandlers() {
     // Form controls
     $('#examType, #lessonSelect').off('change').on('change', function() {
@@ -38,66 +36,55 @@ function bindEventHandlers() {
         validateExamForm();
     });
 
-    // ปรับปรุงการ bind event สำหรับปุ่มเพิ่มข้อสอบ
+    // Add question button
     $('#addQuestion').off('click').on('click', function(e) {
         e.preventDefault();
-        e.stopPropagation(); // ป้องกันการ trigger event ซ้ำ
+        e.stopPropagation();
         addNewQuestion();
     });
 
-    // ปรับปรุงการ bind event สำหรับปุ่มบันทึก
+    // Save exam button  
     $('#saveExam').off('click').on('click', function(e) {
         e.preventDefault();
         saveExam();
     });
-    
-    // Question management - ใช้ event delegation แทน
+
+    // Remove question handler
     $(document).off('click', '.remove-question').on('click', '.remove-question', function(e) {
         e.preventDefault();
         $(this).closest('.question-builder').remove();
         updateQuestionNumbers();
         updateSaveButtonState();
-        updateQuestionCount(); // เพิ่มการอัพเดทจำนวนข้อ
+        updateQuestionCount();
     });
-    
-    // จัดการการเปลี่ยนแปลงของฟอร์ม
+
+    // Form change handlers
     $(document).off('input change', '.question-text, .option-input, .correct-option')
         .on('input change', '.question-text, .option-input, .correct-option', function() {
             updateSaveButtonState();
-    });
+        });
 
-    // Clear validation
+    // Validation handlers
     $(document).off('input', '.question-text, .option-input')
         .on('input', '.question-text, .option-input', function() {
             $(this).removeClass('is-invalid');
-    });
+        });
 
     $(document).off('change', '.correct-option')
         .on('change', '.correct-option', function() {
             $(this).closest('.question-builder').find('.correct-answer').removeClass('is-invalid');
-    });
+        });
 
     // Exam list filter
     $('#examListLessonSelect').off('change').on('change', function() {
         loadExamList($(this).val());
     });
-
-    // แก้ไขฟังก์ชัน updateQuestionNumbers
-    function updateQuestionNumbers() {
-        $('.question-builder').each(function(index) {
-            const number = index + 1;
-            $(this).find('.question-number').text(`ข้อที่ ${number}`);
-            
-            // อัพเดท name และ id ของ radio buttons
-            $(this).find('.correct-option').each(function() {
-                const newName = `correct_${number}`;
-                const newId = `correct_${number}_${$(this).val()}`;
-                $(this).attr('name', newName).attr('id', newId);
-                $(this).next('label').attr('for', newId);
-            });
-        });
-    }
 }
+
+// เพิ่ม error handling
+$(document).ajaxError(function(event, jqXHR, settings, error) {
+    showError('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error);
+});
 
 async function loadLessons() {
     try {
