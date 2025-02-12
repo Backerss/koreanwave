@@ -24,6 +24,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'update':
+                // ตรวจสอบว่ามีชื่อบทเรียนซ้ำหรือไม่
+                $stmt = $db->prepare("SELECT COUNT(*) FROM lessons WHERE title = ? AND id != ?");
+                $stmt->execute([$_POST['title'], $_POST['id']]);
+                if ($stmt->fetchColumn() > 0) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'มีบทเรียนชื่อนี้อยู่แล้ว'
+                    ]);
+                    exit;
+                }
+
                 $stmt = $db->prepare("UPDATE lessons SET title = ?, category = ? WHERE id = ?");
                 $success = $stmt->execute([$_POST['title'], $_POST['category'], $_POST['id']]);
                 echo json_encode(['success' => $success]);
@@ -36,6 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 break;
         }
     } else {
+        // ตรวจสอบว่ามีชื่อบทเรียนซ้ำหรือไม่
+        $stmt = $db->prepare("SELECT COUNT(*) FROM lessons WHERE title = ?");
+        $stmt->execute([$_POST['title']]);
+        if ($stmt->fetchColumn() > 0) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'มีบทเรียนชื่อนี้อยู่แล้ว'
+            ]);
+            exit;
+        }
+
         // Add new course
         $stmt = $db->prepare("INSERT INTO lessons (title, category) VALUES (?, ?)");
         $success = $stmt->execute([$_POST['title'], $_POST['category']]);

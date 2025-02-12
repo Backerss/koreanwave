@@ -35,10 +35,19 @@ $completedLessons = array_filter($lessonProgress, function($lesson) {
 });
 $completedCount = count($completedLessons);
 
-// คำนวณคะแนนเฉลี่ยรวม
-$averageScore = array_reduce($lessonProgress, function($carry, $lesson) {
+// คำนวณคะแนนเฉลี่ยรวม - แก้ไขการป้องกันการหารด้วยศูนย์
+$totalScore = array_reduce($lessonProgress, function($carry, $lesson) {
     return $carry + $lesson['best_score'];
-}, 0) / count($lessonProgress);
+}, 0);
+
+// ป้องกันการหารด้วยศูนย์
+$lessonCount = count($lessonProgress);
+$averageScore = $lessonCount > 0 ? $totalScore / $lessonCount : 0;
+
+// กำหนดค่าเริ่มต้นถ้าไม่มีข้อมูล
+$totalLessons = $totalLessons ?: 1; // ถ้าเป็น 0 ให้ใช้ 1 แทน
+$completedCount = $completedCount ?: 0;
+$averageScore = $averageScore ?: 0;
 ?>
 
 <div class="page grades-page" id="gradesPage">

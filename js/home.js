@@ -1,4 +1,8 @@
+
+
 $(document).ready(function () {
+
+    console.log('Home page loaded');
     let currentScript = null;
 
 

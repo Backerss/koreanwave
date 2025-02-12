@@ -6,8 +6,8 @@ $statsQuery = $db->prepare("
     SELECT 
         COALESCE(AVG(er.score), 0) as avg_grade,
         COUNT(DISTINCT lp.lesson_id) as total_lessons_accessed,
-        SUM(lp.time_spent) as total_time_spent,
-        (SELECT COUNT(*) FROM lessons) as total_available_lessons,
+        COALESCE(SUM(lp.time_spent), 0) as total_time_spent,
+        COALESCE((SELECT COUNT(*) FROM lessons), 0) as total_available_lessons,
         COUNT(DISTINCT CASE WHEN lp.completed = 1 THEN lp.lesson_id END) as completed_lessons
     FROM learning_progress lp
     LEFT JOIN exams e ON lp.lesson_id = e.lesson_id
@@ -16,6 +16,12 @@ $statsQuery = $db->prepare("
 ");
 $statsQuery->execute([$userId, $userId]);
 $stats = $statsQuery->fetch();
+
+// เพิ่มการตรวจสอบและกำหนดค่าเริ่มต้น
+$stats['total_available_lessons'] = max($stats['total_available_lessons'], 1); // ป้องกันการหารด้วยศูนย์
+$stats['completed_lessons'] = $stats['completed_lessons'] ?? 0;
+$stats['avg_grade'] = $stats['avg_grade'] ?? 0;
+$stats['total_time_spent'] = $stats['total_time_spent'] ?? 0;
 
 // ดึงข้อมูลความก้าวหน้าแต่ละบทเรียน - แก้ไข GROUP BY
 $progressQuery = $db->prepare("
@@ -53,7 +59,7 @@ $minutes = $totalMinutes % 60;
 $timeSpent = $hours > 0 ? "{$hours} ชั่วโมง {$minutes} นาที" : "{$minutes} นาที";
 ?>
 
-<div class="page" id="dashboardPage">
+<div class="page active" id="dashboardPage">
     <div class="row">
         <!-- Quick Stats -->
         <div class="col-md-3">
@@ -95,7 +101,13 @@ $timeSpent = $hours > 0 ? "{$hours} ชั่วโมง {$minutes} นาท�
                     <i class="fas fa-tasks"></i>
                 </div>
                 <div class="stat-details">
-                    <h3><?php echo number_format(($stats['completed_lessons'] / $stats['total_available_lessons']) * 100, 0); ?>%</h3>
+                    <h3><?php 
+                    // แก้ไขการคำนวณเปอร์เซ็นต์ความก้าวหน้า
+                    $progressPercentage = ($stats['total_available_lessons'] > 0) 
+                        ? ($stats['completed_lessons'] / $stats['total_available_lessons']) * 100 
+                        : 0;
+                    echo number_format($progressPercentage, 0); 
+                    ?>%</h3>
                     <span>ความก้าวหน้ารวม</span>
                 </div>
             </div>

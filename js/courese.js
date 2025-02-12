@@ -1,9 +1,14 @@
-$(document).ready(function() {
-    loadCourses();
+let isLoading = false;
+let coursesList = [];
 
-    // Add course
-    $('#saveCourseBtn').click(function() {
+$(document).ready(function() {
+    // ป้องกันการ bind event ซ้ำ
+    $(document).off('click', '#saveCourseBtn').on('click', '#saveCourseBtn', function() {
+        if (isLoading) return;
+        isLoading = true;
+
         const formData = new FormData($('#addCourseForm')[0]);
+        
         $.ajax({
             url: '../../system/manageCourses.php',
             method: 'POST',
@@ -11,12 +16,19 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             success: function(response) {
+                isLoading = false;
                 if (response.success) {
                     $('#addCourseModal').modal('hide');
                     $('#addCourseForm')[0].reset();
                     loadCourses();
                     Swal.fire('สำเร็จ', 'เพิ่มบทเรียนเรียบร้อยแล้ว', 'success');
+                } else {
+                    Swal.fire('ผิดพลาด', response.message || 'เกิดข้อผิดพลาดในการเพิ่มบทเรียน', 'error');
                 }
+            },
+            error: function() {
+                isLoading = false;
+                Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
             }
         });
     });
@@ -41,16 +53,36 @@ $(document).ready(function() {
             }
         });
     });
+
+    // เริ่มต้นโหลดข้อมูล
+    loadCourses();
+
+    // ตั้งเวลาอัพเดทข้อมูลทุก 30 วินาที
+    setInterval(loadCourses, 30000);
 });
 
+// ป้องกันการโหลดข้อมูลซ้ำ
 function loadCourses() {
+    if (isLoading) return;
+    isLoading = true;
+
     $.get('../../system/manageCourses.php', { action: 'get' }, function(response) {
-        const coursesList = $('#coursesList');
-        coursesList.empty();
-        
-        $.each(response.courses, function(index, course) {
-            coursesList.append(createCourseCard(course));
-        });
+        isLoading = false;
+        if (response.success) {
+            // เช็คว่าข้อมูลเปลี่ยนแปลงหรือไม่
+            if (JSON.stringify(coursesList) !== JSON.stringify(response.courses)) {
+                coursesList = response.courses;
+                const courseListElement = $('#coursesList');
+                courseListElement.empty();
+                
+                $.each(response.courses, function(index, course) {
+                    courseListElement.append(createCourseCard(course));
+                });
+            }
+        }
+    }).fail(function() {
+        isLoading = false;
+        Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดรายการบทเรียนได้', 'error');
     });
 }
 

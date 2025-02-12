@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 12, 2025 at 08:55 AM
+-- Generation Time: Feb 12, 2025 at 10:48 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -45,7 +45,7 @@ CREATE TABLE `exam_answers` (
   `id` int NOT NULL,
   `result_id` int NOT NULL,
   `question_id` int NOT NULL,
-  `user_answer` char(1) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_answer` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_correct` tinyint(1) DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -137,6 +137,13 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `student_id`, `first_name`, `last_name`, `grade_level`, `classroom`, `email`, `tel`, `password_hash`, `role`, `profile_img`, `created_at`, `updated_at`) VALUES
+(1, '10000', 'admin', 'admin', 0, '0', 'admin.a@sati.ac.th', '0622647041', '', 'admin', '', '2025-02-12 10:37:19', '2025-02-12 10:37:19');
 
 -- --------------------------------------------------------
 
@@ -262,7 +269,7 @@ ALTER TABLE `questions`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `vocabulary`
