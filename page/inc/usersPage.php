@@ -147,8 +147,71 @@
         </div>
     </div>
 
-    <!-- Edit User Modal - Similar to Add User Modal -->
+    <!-- Edit User Modal -->
     <div class="modal fade" id="editUserModal" tabindex="-1">
-        <!-- Similar structure to Add User Modal with pre-filled values -->
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">แก้ไขข้อมูลผู้ใช้</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <input type="hidden" name="id">
+                        <div class="mb-3">
+                            <label class="form-label">ประเภทผู้ใช้</label>
+                            <select class="form-select" name="role" required>
+                                <option value="student">นักเรียน</option>
+                                <option value="teacher">ครู</option>
+                                <option value="admin">ผู้ดูแลระบบ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">รหัสนักเรียน</label>
+                            <input type="text" class="form-control" name="student_id">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ชื่อ</label>
+                            <input type="text" class="form-control" name="first_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">นามสกุล</label>
+                            <input type="text" class="form-control" name="last_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ระดับชั้น</label>
+                            <select class="form-select" name="grade_level">
+                                <option value="">เลือกระดับชั้น</option>
+                                <option value="1">ม.1</option>
+                                <option value="2">ม.2</option>
+                                <option value="3">ม.3</option>
+                                <option value="4">ม.4</option>
+                                <option value="5">ม.5</option>
+                                <option value="6">ม.6</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ห้อง</label>
+                            <select class="form-select" name="classroom">
+                                <option value="">เลือกห้อง</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">รหัสผ่านใหม่ (เว้นว่างถ้าไม่ต้องการเปลี่ยน)</label>
+                            <input type="password" class="form-control" name="password">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" id="updateUser">บันทึก</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

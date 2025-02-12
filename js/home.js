@@ -1,9 +1,8 @@
-
-
 $(document).ready(function () {
 
     console.log('Home page loaded');
     let currentScript = null;
+    let currentStylesheet = null;
 
 
     // Sidebar Toggle
@@ -28,6 +27,7 @@ $(document).ready(function () {
                 'courses': '../../js/courese.js',
                 'examCreator': '../../js/exam-creator.js',
                 'attendance': '../../js/lesson.js',
+                'users': '../../js/userManagementPage.js',
                 // Add other page mappings here
             };
 
@@ -41,21 +41,101 @@ $(document).ready(function () {
             }
         }
 
-        // Modified navigateToPage function to include script loading
+        // Function to load page-specific CSS
+        function loadPageStylesheet(pageName) {
+            // Remove previous stylesheet if exists
+            if (currentStylesheet) {
+                currentStylesheet.remove();
+                currentStylesheet = null;
+            }
+
+            // Map pages to their CSS files
+            const styleMap = {
+                'profile': '../../css/profile.css',
+                'courses': '../../css/courses.css',
+                'examCreator': '../../css/examCreator.css',
+                'attendance': '../../css/attendance.css',
+                'users': '../../css/userManagement.css',
+                'grades': '../../css/gradesPage.css',
+                'lesson': '../../css/lessonpage.css',
+                'exam': '../../css/exam.css'
+            };
+
+            // Load stylesheet if page has an associated CSS file
+            if (styleMap[pageName]) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = styleMap[pageName];
+                currentStylesheet = link;
+                document.head.appendChild(link);
+            }
+        }
+
+        // Modified navigateToPage function to include both script and stylesheet loading
         function navigateToPage($element, targetPage) {
-            $('.sidebar-menu li').removeClass('active');
-            $element.addClass('active');
-            $('#currentPage').text($element.find('span').text() || '');
-            $('.page').removeClass('active');
+            try {
+                // Cleanup before page change
+                if (currentPage === 'users') {
+                    if ($.fn.DataTable.isDataTable('#usersTable')) {
+                        $('#usersTable').DataTable().destroy();
+                    }
+                }
 
-            const $targetPage = $(`#${targetPage}Page`);
-            $targetPage.addClass('active');
+                $('.sidebar-menu li').removeClass('active');
+                $element.addClass('active');
+                $('#currentPage').text($element.find('span').text() || '');
+                $('.page').removeClass('active');
 
-            // Load page-specific script
-            loadPageScript(targetPage);
+                const $targetPage = $(`#${targetPage}Page`);
+                $targetPage.addClass('active');
 
-            // Trigger custom event for page change
-            $(document).trigger('pageChanged', [targetPage + 'Page']);
+                // Load page-specific resources
+                loadPageScript(targetPage);
+                loadPageStylesheet(targetPage);
+
+                // Add loading animation
+                showPageLoadingAnimation($targetPage);
+
+                // Trigger custom event for page change
+                $(document).trigger('pageChanged', [targetPage + 'Page']);
+            } catch (err) {
+                console.error('Navigation error:', err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถโหลดหน้าได้ กรุณาลองใหม่อีกครั้ง'
+                });
+            }
+        }
+
+        // Add loading animation function
+        function showPageLoadingAnimation($targetPage) {
+            const loadingOverlay = `
+                <div class="page-loading-overlay">
+                    <div class="loading-spinner"></div>
+                </div>
+            `;
+            
+            $targetPage.append(loadingOverlay);
+            
+            // Remove loading overlay after resources are loaded
+            Promise.all([
+                // Wait for stylesheet to load
+                currentStylesheet ? new Promise(resolve => {
+                    currentStylesheet.onload = resolve;
+                }) : Promise.resolve(),
+                // Wait for script to load
+                currentScript ? new Promise(resolve => {
+                    currentScript.onload = resolve;
+                }) : Promise.resolve(),
+                // Minimum display time for loading animation
+                new Promise(resolve => setTimeout(resolve, 500))
+            ]).then(() => {
+                $('.page-loading-overlay').fadeOut(300, function() {
+                    $(this).remove();
+                });
+            });
         }
 
         // Page Navigation
@@ -93,6 +173,7 @@ $(document).ready(function () {
         const initialPage = $('.sidebar-menu li.active').data('page');
         if (initialPage) {
             loadPageScript(initialPage);
+            loadPageStylesheet(initialPage);
         }
 
         // Notification Bell Click
@@ -241,6 +322,9 @@ $(document).ready(function () {
         }
         if (currentScript) {
             currentScript.remove();
+        }
+        if (currentStylesheet) {
+            currentStylesheet.remove();
         }
     });
 });
