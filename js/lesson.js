@@ -278,31 +278,56 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
 
 // เพิ่มฟังก์ชันตรวจสอบว่าเรียนครบทุกคำศัพท์หรือยัง
 function checkLessonCompletion(currentIndex, totalVocab) {
-    // เพิ่มการตรวจสอบว่าอยู่ที่คำศัพท์สุดท้ายและกดปุ่มถัดไป
     if (currentIndex === totalVocab - 1) {
         const $nextBtn = $('.btn-next');
-
         $nextBtn.prop('disabled', false);
         
-        console.log(currentIndex, totalVocab);
-        // ผูกเหตุการณ์คลิกปุ่มถัดไป
         $nextBtn.one('click', () => {
-            Swal.fire({
-                title: 'เรียนจบบทเรียนแล้ว!',
-                text: 'คุณต้องการทำแบบทดสอบหลังเรียนหรือไม่?',
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: 'ทำแบบทดสอบ',
-                cancelButtonText: 'เรียนซ้ำ'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // ไปหน้าแบบทดสอบหลังเรียน
-                    window.location.href = `posttest.php?lesson_id=${window.currentLessonId}`;
-                } else {
-                    // Reset index เพื่อเริ่มเรียนใหม่
-                    window.currentVocabIndex = 0;
-                    updateLessonPage(null, window.vocabularyList[0], window.vocabularyList.length);
-                    updateNavigationState();
+            // ดึงข้อมูลแบบทดสอบหลังเรียน
+            $.ajax({
+                url: '../../system/manageExams.php',
+                type: 'GET',
+                data: {
+                    action: 'getExamByLessonAndType',
+                    lessonId: window.currentLessonId,
+                    examType: 'posttest'
+                },
+                success: function(response) {
+                    if (response.success && response.exam) {
+                        Swal.fire({
+                            title: 'เรียนจบบทเรียนแล้ว!',
+                            text: 'คุณต้องการทำแบบทดสอบหลังเรียนหรือไม่?',
+                            icon: 'success',
+                            showCancelButton: true,
+                            confirmButtonText: 'ทำแบบทดสอบ',
+                            cancelButtonText: 'เรียนซ้ำ'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // ไปหน้าแบบทดสอบพร้อม exam_id
+                                window.location.href = `../view/exam.php?exam_id=${response.exam.id}`;
+                            } else {
+                                // Reset index เพื่อเริ่มเรียนใหม่
+                                window.currentVocabIndex = 0;
+                                updateLessonPage(null, window.vocabularyList[0], window.vocabularyList.length);
+                                updateNavigationState();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่พบแบบทดสอบหลังเรียน กรุณาติดต่อผู้สอน',
+                            icon: 'error',
+                            confirmButtonText: 'ตกลง'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถโหลดแบบทดสอบได้ กรุณาลองใหม่อีกครั้ง',
+                        icon: 'error',
+                        confirmButtonText: 'ตกลง'
+                    });
                 }
             });
         });

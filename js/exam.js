@@ -164,6 +164,7 @@ $(document).ready(function() {
         });
     }
 
+    // Modify the existing submitExamAnswers function
     function submitExamAnswers() {
         const answers = collectAnswers();
         examSubmitted = true;
@@ -179,18 +180,15 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    Swal.fire({
-                        title: 'ส่งคำตอบสำเร็จ',
-                        text: 'ระบบได้บันทึกคำตอบของคุณแล้ว',
-                        icon: 'success',
-                        allowOutsideClick: false,
-                        confirmButtonText: 'ตกลง'
-                    }).then(() => {
-                        window.location.href = response.redirect_url;
-                    });
+                    // ถ้าส่งข้อสอบสำเร็จ ให้ redirect ไปหน้า result.php พร้อมส่ง result_id
+                    window.location.href = response.redirect_url;
+                    
                 } else {
                     Swal.fire('ผิดพลาด', response.message, 'error');
                 }
+            },
+            error: function() {
+                Swal.fire('ผิดพลาด', 'ไม่สามารถส่งคำตอบได้ กรุณาลองใหม่', 'error');
             }
         });
     }
