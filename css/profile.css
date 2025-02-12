@@ -192,6 +192,19 @@
     background: var(--dark-blue);
 }
 
+/* Add to profile.css */
+.password-strength-meter {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.password-strength-meter.very-weak { background: #ffebee; color: #c62828; }
+.password-strength-meter.weak { background: #fff3e0; color: #ef6c00; }
+.password-strength-meter.medium { background: #f1f8e9; color: #558b2f; }
+.password-strength-meter.strong { background: #e8f5e9; color: #2e7d32; }
+.password-strength-meter.very-strong { background: #e8f5e9; color: #1b5e20; }
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .profile-stats {
