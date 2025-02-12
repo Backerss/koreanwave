@@ -62,10 +62,6 @@ if (!isset($_SESSION['user_data'])) {
                 <i class="fas fa-clipboard-check"></i>
                 <span>การเข้าเรียน</span>
             </li>
-            <li data-page="settings">
-                <i class="fas fa-cog"></i>
-                <span>ตั้งค่า</span>
-            </li>
 
             <?php if ($_SESSION['user_data']['role'] == 'teacher' || $_SESSION['user_data']['role'] == 'admin'): ?>
             <hr>
