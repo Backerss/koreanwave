@@ -1,11 +1,14 @@
-let isLoading = false;
-let coursesList = [];
+// Define global variables in window object if not exists
+window.isLoading = window.isLoading || false;
+window.coursesList = window.coursesList || [];
+window.currentLessonId = window.currentLessonId || null;
+window.currentLessonTitle = window.currentLessonTitle || null;
 
 $(document).ready(function() {
     // ป้องกันการ bind event ซ้ำ
     $(document).off('click', '#saveCourseBtn').on('click', '#saveCourseBtn', function() {
-        if (isLoading) return;
-        isLoading = true;
+        if (window.isLoading) return;
+        window.isLoading = true;
 
         const formData = new FormData($('#addCourseForm')[0]);
         
@@ -16,7 +19,7 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             success: function(response) {
-                isLoading = false;
+                window.isLoading = false;
                 if (response.success) {
                     $('#addCourseModal').modal('hide');
                     $('#addCourseForm')[0].reset();
@@ -27,7 +30,7 @@ $(document).ready(function() {
                 }
             },
             error: function() {
-                isLoading = false;
+                window.isLoading = false;
                 Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
             }
         });
@@ -63,15 +66,15 @@ $(document).ready(function() {
 
 // ป้องกันการโหลดข้อมูลซ้ำ
 function loadCourses() {
-    if (isLoading) return;
-    isLoading = true;
+    if (window.isLoading) return;
+    window.isLoading = true;
 
     $.get('../../system/manageCourses.php', { action: 'get' }, function(response) {
-        isLoading = false;
+        window.isLoading = false;
         if (response.success) {
             // เช็คว่าข้อมูลเปลี่ยนแปลงหรือไม่
-            if (JSON.stringify(coursesList) !== JSON.stringify(response.courses)) {
-                coursesList = response.courses;
+            if (JSON.stringify(window.coursesList) !== JSON.stringify(response.courses)) {
+                window.coursesList = response.courses;
                 const courseListElement = $('#coursesList');
                 courseListElement.empty();
                 
@@ -81,7 +84,7 @@ function loadCourses() {
             }
         }
     }).fail(function() {
-        isLoading = false;
+        window.isLoading = false;
         Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดรายการบทเรียนได้', 'error');
     });
 }
@@ -159,17 +162,10 @@ function deleteCourse(id) {
 
 // Add these functions after the existing code
 
-if (typeof currentLessonId === 'undefined') {
-    let currentLessonId = null;
-}
-if (typeof currentLessonTitle === 'undefined') {
-    let currentLessonTitle = null;
-}
-
 function showVocabulary(lessonId) {
-    currentLessonId = lessonId;
+    window.currentLessonId = lessonId;
     const lessonTitle = $(`button[onclick="showVocabulary(${lessonId})"]`).data('lesson-title');
-    currentLessonTitle = lessonTitle;
+    window.currentLessonTitle = lessonTitle;
     
     // อัพเดทชื่อบทเรียนในโมดอล
     $('#vocabularyModal .modal-title').text(`จัดการคำศัพท์ - ${lessonTitle}`);
@@ -217,7 +213,7 @@ function loadVocabulary(lessonId) {
 $('#addVocabBtn').click(function() {
     const form = $('#vocabularyForm')[0];
     form.reset();
-    $('[name="lesson_id"]').val(currentLessonId);
+    $('[name="lesson_id"]').val(window.currentLessonId);
     $('#vocabularyFormModal').modal('show');
 });
 
@@ -235,7 +231,7 @@ $('#saveVocabularyBtn').click(function() {
         success: function(response) {
             if (response.success) {
                 $('#vocabularyFormModal').modal('hide');
-                loadVocabulary(currentLessonId);
+                loadVocabulary(window.currentLessonId);
                 Swal.fire('สำเร็จ', 'บันทึกข้อมูลคำศัพท์เรียบร้อยแล้ว', 'success');
             }
         },
@@ -288,7 +284,7 @@ function deleteVocabulary(id) {
                 id: id
             }, function(response) {
                 if (response.success) {
-                    loadVocabulary(currentLessonId);
+                    loadVocabulary(window.currentLessonId);
                     Swal.fire('สำเร็จ', 'ลบคำศัพท์เรียบร้อยแล้ว', 'success');
                 }
             });

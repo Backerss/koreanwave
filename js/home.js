@@ -3,7 +3,20 @@ $(document).ready(function () {
     console.log('Home page loaded');
     let currentScript = null;
     let currentStylesheet = null;
+    const loadedScripts = new Set();
 
+    // เพิ่มตัวแปร global สำหรับจัดการสคริปต์
+    const scriptManager = {
+        loadedScripts: new Map(), // เก็บ reference ของสคริปต์ที่โหลด
+        currentPage: null,
+        scriptMap: {
+            'profile': '../../js/profile.js',
+            'courses': '../../js/courese.js',
+            'examCreator': '../../js/exam-creator.js',
+            'attendance': '../../js/lesson.js',
+            'users': '../../js/userManagementPage.js'
+        }
+    };
 
     // Sidebar Toggle
     $('#sidebarToggle').on('click', function () {
@@ -13,31 +26,52 @@ $(document).ready(function () {
     });
 
     try {
-        // Function to load page-specific scripts
+        // ฟังก์ชันสำหรับการโหลดสคริปต์
         function loadPageScript(pageName) {
-            // Remove previous script if exists
-            if (currentScript) {
-                currentScript.remove();
-                currentScript = null;
+            const scriptPath = scriptManager.scriptMap[pageName];
+            if (!scriptPath) return Promise.resolve();
+
+            // ถ้าสคริปต์ถูกโหลดแล้ว ให้ return Promise ที่ resolve แล้ว
+            if (scriptManager.loadedScripts.has(scriptPath)) {
+                console.log(`Script ${scriptPath} already loaded`);
+                return Promise.resolve();
             }
 
-            // Map pages to their script files
-            const scriptMap = {
-                'profile': '../../js/profile.js',
-                'courses': '../../js/courese.js',
-                'examCreator': '../../js/exam-creator.js',
-                'attendance': '../../js/lesson.js',
-                'users': '../../js/userManagementPage.js',
-                // Add other page mappings here
-            };
-
-            // Load script if page has an associated script file
-            if (scriptMap[pageName]) {
+            // สร้าง Promise สำหรับการโหลดสคริปต์
+            return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                script.src = scriptMap[pageName];
+                script.src = `${scriptPath}?v=${new Date().getTime()}`; // เพิ่ม timestamp เพื่อป้องกัน cache
                 script.type = 'text/javascript';
-                currentScript = script;
+
+                script.onload = () => {
+
+                    scriptManager.loadedScripts.set(scriptPath, script);
+                    resolve();
+                };
+
+                script.onerror = () => {
+                    console.error(`Failed to load script ${scriptPath}`);
+                    reject(new Error(`Failed to load ${scriptPath}`));
+                };
+
                 document.body.appendChild(script);
+            });
+        }
+
+        // ฟังก์ชันสำหรับลบสคริปต์
+        function unloadPageScript(pageName) {
+            const scriptPath = scriptManager.scriptMap[pageName];
+            if (!scriptPath) return;
+
+            const script = scriptManager.loadedScripts.get(scriptPath);
+            if (script) {
+                // ลบ Event Listeners
+                const clone = script.cloneNode(true);
+                script.parentNode.replaceChild(clone, script);
+                clone.remove();
+                
+                // ลบออกจาก Map
+                scriptManager.loadedScripts.delete(scriptPath);
             }
         }
 
@@ -69,14 +103,18 @@ $(document).ready(function () {
             }
         }
 
-        // Modified navigateToPage function to include both script and stylesheet loading
+        // ปรับปรุงฟังก์ชัน navigateToPage
         function navigateToPage($element, targetPage) {
             try {
-                // Cleanup before page change
-                if (currentPage === 'users') {
-                    if ($.fn.DataTable.isDataTable('#usersTable')) {
+                // Cleanup ก่อนเปลี่ยนหน้า
+                if (scriptManager.currentPage) {
+                    // ทำความสะอาด DataTables ถ้ามี
+                    if (scriptManager.currentPage === 'users' && $.fn.DataTable.isDataTable('#usersTable')) {
                         $('#usersTable').DataTable().destroy();
                     }
+                    
+                    // ยกเลิกการโหลดสคริปต์ของหน้าเดิม
+                    unloadPageScript(scriptManager.currentPage);
                 }
 
                 $('.sidebar-menu li').removeClass('active');
@@ -87,21 +125,36 @@ $(document).ready(function () {
                 const $targetPage = $(`#${targetPage}Page`);
                 $targetPage.addClass('active');
 
-                // Load page-specific resources
-                loadPageScript(targetPage);
-                loadPageStylesheet(targetPage);
-
-                // Add loading animation
+                // แสดง loading
                 showPageLoadingAnimation($targetPage);
 
-                // Trigger custom event for page change
-                $(document).trigger('pageChanged', [targetPage + 'Page']);
+                // อัพเดทหน้าปัจจุบัน
+                scriptManager.currentPage = targetPage;
+
+                // โหลดทรัพยากรของหน้า
+                Promise.all([
+                    loadPageScript(targetPage),
+                    loadPageStylesheet(targetPage)
+                ]).then(() => {
+                    $('.page-loading-overlay').fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                    $(document).trigger('pageChanged', [targetPage + 'Page']);
+                }).catch(error => {
+                    console.error('Error loading page resources:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถโหลดทรัพยากรของหน้าได้'
+                    });
+                });
+
             } catch (err) {
                 console.error('Navigation error:', err);
                 Swal.fire({
                     icon: 'error',
                     title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถโหลดหน้าได้ กรุณาลองใหม่อีกครั้ง'
+                    text: 'ไม่สามารถนำทางไปยังหน้าที่ต้องการได้'
                 });
             }
         }
@@ -329,3 +382,10 @@ $(document).ready(function () {
 
     // Your existing exam creator code...
 })();
+
+// เพิ่ม Event Listener สำหรับการ refresh page
+window.addEventListener('beforeunload', () => {
+    if (scriptManager.currentPage) {
+        unloadPageScript(scriptManager.currentPage);
+    }
+});
