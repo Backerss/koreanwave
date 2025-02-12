@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 10, 2025 at 02:52 PM
+-- Generation Time: Feb 12, 2025 at 08:55 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -82,7 +82,8 @@ CREATE TABLE `learning_progress` (
   `posttest_done` tinyint(1) DEFAULT '0',
   `completed` tinyint(1) DEFAULT '0',
   `last_accessed` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `time_spent` int DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
