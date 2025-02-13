@@ -109,54 +109,83 @@ $(document).ready(function() {
 // ป้องกันการโหลดข้อมูลซ้ำ
 function loadCourses() {
     if (window.isLoading) return;
+    
+    showLoading();
     window.isLoading = true;
 
-    $.get('../../system/manageCourses.php', { action: 'get' }, function(response) {
-        window.isLoading = false;
-        if (response.success) {
-            // เช็คว่าข้อมูลเปลี่ยนแปลงหรือไม่
-            if (JSON.stringify(window.coursesList) !== JSON.stringify(response.courses)) {
-                window.coursesList = response.courses;
+    $.get('../../system/manageCourses.php', { action: 'get' })
+        .done(function(response) {
+            if (response.success) {
                 const courseListElement = $('#coursesList');
                 courseListElement.empty();
                 
-                $.each(response.courses, function(index, course) {
-                    courseListElement.append(createCourseCard(course));
-                });
+                if (response.courses.length === 0) {
+                    courseListElement.html(`
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">ยังไม่มีบทเรียน กรุณาเพิ่มบทเรียนใหม่</p>
+                        </div>
+                    `);
+                } else {
+                    response.courses.forEach(course => {
+                        courseListElement.append(createCourseCard(course));
+                    });
+                }
             }
-        }
-    }).fail(function() {
-        window.isLoading = false;
-        Swal.fire('ผิดพลาด', 'ไม่สามารถโหลดรายการบทเรียนได้', 'error');
-    });
+        })
+        .fail(function(xhr, status, error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ไม่สามารถโหลดรายการบทเรียนได้'
+            });
+            console.error('Load courses error:', error);
+        })
+        .always(function() {
+            window.isLoading = false;
+            hideLoading();
+        });
 }
 
+// Show loading indicator
+function showLoading() {
+    $('#loadingIndicator').removeClass('d-none');
+}
+
+// Hide loading indicator
+function hideLoading() {
+    $('#loadingIndicator').addClass('d-none');
+}
+
+// Improve createCourseCard function
 function createCourseCard(course) {
-    return $(`
+    return `
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
+            <div class="card course-card">
                 <div class="card-body">
                     <h5 class="card-title">${course.title}</h5>
-                    <p class="card-text">
-                        <span class="badge bg-info">${getCategoryName(course.category)}</span>
-                    </p>
-                    <div class="d-flex justify-content-end">
-                        <button class="btn btn-sm btn-outline-success me-2" 
-                                onclick="showVocabulary(${course.id})" 
+                    <span class="category-badge mb-3">
+                        ${getCategoryName(course.category)}
+                    </span>
+                    <div class="d-flex justify-content-end mt-3 action-buttons">
+                        <button class="btn btn-outline-success action-btn" 
+                                onclick="showVocabulary(${course.id})"
                                 data-lesson-title="${course.title}">
                             <i class="fas fa-book"></i> คำศัพท์
                         </button>
-                        <button class="btn btn-sm btn-outline-primary me-2" onclick="editCourse(${course.id})">
+                        <button class="btn btn-outline-primary action-btn" 
+                                onclick="editCourse(${course.id})">
                             <i class="fas fa-edit"></i> แก้ไข
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCourse(${course.id})">
+                        <button class="btn btn-outline-danger action-btn" 
+                                onclick="deleteCourse(${course.id})">
                             <i class="fas fa-trash"></i> ลบ
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    `);
+    `;
 }
 
 function getCategoryName(category) {

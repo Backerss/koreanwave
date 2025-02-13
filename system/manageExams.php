@@ -22,6 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 updateQuestion($_POST['questionData']);
                 break;
             case 'submitExam':
+                if (!isset($_POST['exam_id']) || !isset($_POST['answers']) || !isset($_POST['time_spent'])) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'ข้อมูลไม่ครบถ้วน'
+                    ]);
+                    exit;
+                }
                 submitExam($_POST['exam_id'], $_POST['answers'], $_POST['time_spent']);
                 break;
             case 'updatePretestStatus':
@@ -537,118 +544,143 @@ function loadExamQuestions($examId) {
 }
 
 // Add this new function at the bottom of the file
-function submitExam($examId, $answersJson, $timeSpent) {
+function submitExam($examId, $answers, $timeSpent) {
     global $db;
+    $userId = $_SESSION['user_data']['id'];
     
     try {
-        $db->beginTransaction();
-        
-        // Decode answers
-        $answers = json_decode($answersJson, true);
-        if (!$answers) {
-            throw new Exception('Invalid answer format');
-        }
-        
-        // Get exam details, including exam_type
+        // Get exam details
         $stmt = $db->prepare("
-            SELECT q.id, q.correct_answer, e.lesson_id, e.exam_type
-            FROM questions q
-            JOIN exams e ON q.exam_id = e.id
-            WHERE q.exam_id = ?
+            SELECT e.*, l.id as lesson_id 
+            FROM exams e 
+            JOIN lessons l ON e.lesson_id = l.id 
+            WHERE e.id = ?
         ");
         $stmt->execute([$examId]);
-        $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $exam = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if (empty($questions)) {
+        if (!$exam) {
             throw new Exception('ไม่พบข้อสอบ');
         }
 
-        // Calculate score
-        $totalQuestions = count($questions);
-        $correctAnswers = 0;
-        $questionResults = [];
-        
-        foreach ($answers as $answer) {
-            $questionId = $answer['question_id'];
-            $userAnswer = $answer['answer'];
+        $db->beginTransaction();
+
+        try {
+            // Calculate score
+            $answers = json_decode($answers, true);
+            $totalQuestions = count($answers);
+            $correctAnswers = 0;
             
-            // Find correct answer for this question
-            $correctAnswer = null;
-            foreach ($questions as $q) {
-                if ($q['id'] == $questionId) {
-                    $correctAnswer = $q['correct_answer'];
-                    break;
+            // ตรวจสอบคำตอบและนับจำนวนข้อที่ถูก
+            $stmt = $db->prepare("SELECT id, correct_answer FROM questions WHERE exam_id = ?");
+            $stmt->execute([$examId]);
+            $correctAnswersMap = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+            
+            foreach ($answers as $answer) {
+                if (isset($correctAnswersMap[$answer['question_id']]) && 
+                    $answer['answer'] === $correctAnswersMap[$answer['question_id']]) {
+                    $correctAnswers++;
                 }
             }
-            
-            // Check if answer is correct
-            $isCorrect = ($userAnswer === $correctAnswer) ? 1 : 0;
-            if ($isCorrect) {
-                $correctAnswers++;
-            }
-            
-            $questionResults[] = [
-                'question_id' => $questionId,
-                'user_answer' => $userAnswer,
-                'is_correct' => $isCorrect
-            ];
-        }
-        
-        // Calculate score percentage
-        $score = ($correctAnswers / $totalQuestions) * 100;
-        
-        // Insert exam result
-        $stmt = $db->prepare("
-            INSERT INTO exam_results (
-                exam_id, user_id, score, time_spent, 
-                correct_answers, total_questions, answers_json, completed_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ");
-        
-        $stmt->execute([
-            $examId,
-            $_SESSION['user_data']['id'],
-            $score,
-            $timeSpent,
-            $correctAnswers,
-            $totalQuestions,
-            $answersJson
-        ]);
-        
-        $resultId = $db->lastInsertId();
 
-        // ถ้าเป็นข้อสอบหลังเรียน อัพเดทสถานะการสอบผ่าน
-        if ($questions[0]['exam_type'] === 'posttest') {
+            // คำนวณคะแนนเป็นเปอร์เซ็นต์
+            $score = ($correctAnswers / $totalQuestions) * 100;
+            
+            // แก้ไขคำสั่ง INSERT โดยไม่ต้องระบุ created_at
             $stmt = $db->prepare("
-                UPDATE learning_progress 
-                SET posttest_done = :posttest_done
-                WHERE user_id = :user_id 
-                AND lesson_id = :lesson_id
+                INSERT INTO exam_results (
+                    exam_id,
+                    user_id,
+                    score,
+                    time_spent,
+                    correct_answers,
+                    total_questions,
+                    answers_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
             
             $stmt->execute([
-                'posttest_done' => ($score >= 50) ? 1 : 0,
-                'user_id' => $_SESSION['user_data']['id'],
-                'lesson_id' => $questions[0]['lesson_id']
+                $examId,
+                $userId,
+                $score,
+                $timeSpent,
+                $correctAnswers,
+                $totalQuestions,
+                json_encode($answers)
             ]);
-        }
-        
-        $db->commit();
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'บันทึกคำตอบเรียบร้อยแล้ว',
-            'redirect_url' => "../../page/view/result.php?result_id=" . $resultId
-        ]);
-        
-    } catch (Exception $e) {
-        if ($db->inTransaction()) {
+
+            $resultId = $db->lastInsertId();
+
+            // Update learning progress based on exam type
+            if ($exam['exam_type'] === 'pretest') {
+                // ตรวจสอบว่ามีข้อมูลใน learning_progress หรือไม่
+                $checkStmt = $db->prepare("
+                    SELECT id 
+                    FROM learning_progress 
+                    WHERE user_id = ? AND lesson_id = ?
+                ");
+                $checkStmt->execute([$userId, $exam['lesson_id']]);
+                $existingProgress = $checkStmt->fetch();
+
+                if ($existingProgress) {
+                    // ถ้ามีข้อมูลอยู่แล้ว ให้อัพเดท pretest_done
+                    $stmt = $db->prepare("
+                        UPDATE learning_progress 
+                        SET pretest_done = 1 
+                        WHERE user_id = ? AND lesson_id = ?
+                    ");
+                    $stmt->execute([$userId, $exam['lesson_id']]);
+                } else {
+                    // ถ้ายังไม่มีข้อมูล ให้เพิ่มใหม่
+                    $stmt = $db->prepare("
+                        INSERT INTO learning_progress 
+                            (user_id, lesson_id, pretest_done, current_vocab_index) 
+                        VALUES (?, ?, 1, 0)
+                    ");
+                    $stmt->execute([$userId, $exam['lesson_id']]);
+                }
+
+            } elseif ($exam['exam_type'] === 'posttest') {
+                $passed = $score >= 50;
+                $stmt = $db->prepare("
+                    UPDATE learning_progress SET 
+                        posttest_done = 1,
+                        completed = :completed,
+                        best_score = CASE 
+                            WHEN best_score < :score OR best_score IS NULL 
+                            THEN :score 
+                            ELSE best_score 
+                        END
+                    WHERE user_id = :user_id 
+                    AND lesson_id = :lesson_id
+                ");
+                $stmt->execute([
+                    'completed' => $passed ? 1 : 0,
+                    'score' => $score,
+                    'user_id' => $userId,
+                    'lesson_id' => $exam['lesson_id']
+                ]);
+            }
+
+            $db->commit();
+
+            echo json_encode([
+                'success' => true,
+                'score' => $score,
+                'correctAnswers' => $correctAnswers,
+                'totalQuestions' => $totalQuestions,
+                'redirect_url' => "../view/result.php?result_id=" . $resultId
+            ]);
+
+        } catch (Exception $e) {
             $db->rollBack();
+            throw $e;
         }
-        
+
+    } catch (Exception $e) {
         echo json_encode([
             'success' => false,
-            'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+            'message' => $e->getMessage()
         ]);
     }
 }
@@ -721,5 +753,43 @@ function handlePostTestSubmission($examId, $userId, $lessonId, $score, $totalQue
             'success' => false,
             'message' => $e->getMessage()
         ];
+    }
+}
+
+// เพิ่มฟังก์ชัน calculateScore
+function calculateScore($examId, $userAnswers) {
+    global $db;
+    
+    try {
+        // ดึงคำตอบที่ถูกต้องจากฐานข้อมูล
+        $stmt = $db->prepare("
+            SELECT id, correct_answer 
+            FROM questions 
+            WHERE exam_id = ?
+        ");
+        $stmt->execute([$examId]);
+        $correctAnswers = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        
+        if (empty($correctAnswers)) {
+            throw new Exception('ไม่พบข้อมูลคำถาม');
+        }
+
+        // คำนวณคะแนน
+        $score = 0;
+        $totalQuestions = count($correctAnswers);
+
+        foreach ($userAnswers as $answer) {
+            $questionId = $answer['question_id'];
+            if (isset($correctAnswers[$questionId]) && 
+                $answer['answer'] === $correctAnswers[$questionId]) {
+                $score++;
+            }
+        }
+
+        // คำนวณเป็นเปอร์เซ็นต์
+        return ($score / $totalQuestions) * 100;
+
+    } catch (Exception $e) {
+        throw new Exception('ไม่สามารถคำนวณคะแนนได้: ' . $e->getMessage());
     }
 }

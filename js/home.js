@@ -90,7 +90,8 @@ $(document).ready(function () {
                 'users': '../../css/userManagement.css',
                 'grades': '../../css/gradesPage.css',
                 'lesson': '../../css/lessonpage.css',
-                'exam': '../../css/exam.css'
+                'exam': '../../css/exam.css',
+                'courses': '../../css/couresePage.css',
             };
 
             // Load stylesheet if page has an associated CSS file

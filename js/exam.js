@@ -138,86 +138,71 @@ $(document).ready(function() {
             showConfirmButton: false,
             timer: 2000
         }).then(() => {
-            submitExamAnswers();
-        });
-    }
+            const answers = collectAnswers();
+            examSubmitted = true;
 
-    // แก้ไขฟังก์ชัน submitExam ใน exam.js
-    function submitExam() {
-        const answers = collectAnswers();
-        const examId = new URLSearchParams(window.location.search).get('exam_id');
-        
-        $.ajax({
-            url: '../../system/manageExams.php',
-            type: 'POST',
-            data: {
-                action: 'submit',
-                exam_id: examId,
-                answers: JSON.stringify(answers)
-            },
-            success: function(response) {
-                try {
-                    const result = typeof response === 'string' ? JSON.parse(response) : response;
-                    
-                    if (result.success) {
-                        // ถ้าเป็นแบบทดสอบก่อนเรียน อัพเดท pretest_done เป็น 1
-                        if (result.exam_type === 'pretest') {
-                            $.ajax({
-                                url: '../../system/manageExams.php',
-                                type: 'POST',
-                                data: {
-                                    action: 'updatePretestStatus',
-                                    lesson_id: result.lesson_id
-                                },
-                                success: function(updateResponse) {
-                                    showExamResult(result.score, result.totalQuestions, result.exam_type);
-                                },
-                                error: function() {
-                                    console.error('Error updating pretest status');
-                                    showExamResult(result.score, result.totalQuestions, result.exam_type);
-                                }
-                            });
-                        } else {
-                            showExamResult(result.score, result.totalQuestions, result.exam_type);
-                        }
+            $.ajax({
+                url: '../../system/manageExams.php',
+                method: 'POST',
+                data: {
+                    action: 'submitExam',
+                    exam_id: examId,
+                    answers: JSON.stringify(answers),
+                    time_spent: 20 * 60
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = response.redirect_url;
                     } else {
-                        Swal.fire('ผิดพลาด', 'ไม่สามารถส่งคำตอบได้', 'error');
+                        Swal.fire('ผิดพลาด', response.message || 'ไม่สามารถส่งคำตอบได้', 'error');
                     }
-                } catch (e) {
-                    console.error('Error parsing response:', e);
-                    Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการประมวลผล', 'error');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Auto submit error:', error);
+                    console.error('Response:', xhr.responseText);
+                    Swal.fire('ผิดพลาด', 'ไม่สามารถส่งคำตอบอัตโนมัติ กรุณาลองใหม่', 'error');
                 }
-            },
-            error: function() {
-                Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
-            }
+            });
         });
     }
 
-    function submitExamAnswers() {
-        const answers = collectAnswers();
-        examSubmitted = true;
+    function submitExam() {
+        Swal.fire({
+            title: 'ยืนยันการส่งคำตอบ',
+            text: 'คุณแน่ใจหรือไม่ที่จะส่งคำตอบ?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'ส่งคำตอบ',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const answers = collectAnswers();
+                examSubmitted = true;
 
-        $.ajax({
-            url: '../../system/manageExams.php',
-            method: 'POST',
-            data: {
-                action: 'submitExam',
-                exam_id: examId,
-                answers: JSON.stringify(answers),
-                time_spent: 20 * 60 - timeLeft
-            },
-            success: function(response) {
-                if (response.success) {
-                    // ถ้าส่งข้อสอบสำเร็จ ให้ redirect ไปหน้า result.php พร้อมส่ง result_id
-                    window.location.href = response.redirect_url;
-                    
-                } else {
-                    Swal.fire('ผิดพลาด', response.message, 'error');
-                }
-            },
-            error: function() {
-                Swal.fire('ผิดพลาด', 'ไม่สามารถส่งคำตอบได้ กรุณาลองใหม่', 'error');
+                $.ajax({
+                    url: '../../system/manageExams.php',
+                    method: 'POST',
+                    data: {
+                        action: 'submitExam',
+                        exam_id: examId,
+                        answers: JSON.stringify(answers),
+                        time_spent: 20 * 60 - timeLeft
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            Swal.fire('ผิดพลาด', response.message || 'ไม่สามารถส่งคำตอบได้', 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Submit error:', error);
+                        console.error('Response:', xhr.responseText);
+                        Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ กรุณาลองใหม่', 'error');
+                    }
+                });
             }
         });
     }
