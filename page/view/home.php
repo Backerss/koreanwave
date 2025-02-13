@@ -1,18 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-
 <?php
-
+// ย้าย session_start() และการตรวจสอบ session มาไว้บนสุดก่อนจะมี output ใดๆ
 session_start();
+require_once("../../system/db.php");
 
-include_once("../../system/db.php");
+// ตรวจสอบ session
 if (!isset($_SESSION['user_data'])) {
     header("Location: ../../page/auth/login.html");
     exit();
 }
-
-
 ?>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
     <!-- Prevent Caching -->

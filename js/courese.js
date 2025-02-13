@@ -62,6 +62,48 @@ $(document).ready(function() {
 
     // ตั้งเวลาอัพเดทข้อมูลทุก 30 วินาที
     setInterval(loadCourses, 30000);
+
+    // แก้ไขการ bind event ของปุ่มบันทึก
+    // ลบ event handlers เดิมก่อน
+    $('#saveVocabularyBtn').off('click');
+    
+    // bind event handler ใหม่
+    $('#saveVocabularyBtn').on('click', function() {
+        const formData = new FormData($('#vocabularyForm')[0]);
+        formData.append('action', formData.get('id') ? 'update' : 'add');
+
+        $.ajax({
+            url: '../../system/manageVocabulary.php',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    $('#vocabularyFormModal').modal('hide');
+                    loadVocabulary(window.currentLessonId);
+                    // รีเซ็ตฟอร์ม
+                    $('#vocabularyForm')[0].reset();
+                    $('#currentImage').empty();
+                    $('#currentAudio').empty();
+                    Swal.fire('สำเร็จ', 'บันทึกข้อมูลคำศัพท์เรียบร้อยแล้ว', 'success');
+                }
+            },
+            error: function(xhr) {
+                Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+            }
+        });
+    });
+
+    // ปุ่มเพิ่มคำศัพท์
+    $('#addVocabBtn').off('click').on('click', function() {
+        const form = $('#vocabularyForm')[0];
+        form.reset();
+        $('#currentImage').empty();
+        $('#currentAudio').empty();
+        $('[name="lesson_id"]').val(window.currentLessonId);
+        $('#vocabularyFormModal').modal('show');
+    });
 });
 
 // ป้องกันการโหลดข้อมูลซ้ำ
@@ -209,13 +251,6 @@ function loadVocabulary(lessonId) {
         });
     });
 }
-
-$('#addVocabBtn').click(function() {
-    const form = $('#vocabularyForm')[0];
-    form.reset();
-    $('[name="lesson_id"]').val(window.currentLessonId);
-    $('#vocabularyFormModal').modal('show');
-});
 
 // Modify saveVocabularyBtn click handler
 $('#saveVocabularyBtn').click(function() {

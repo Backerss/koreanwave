@@ -24,6 +24,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'submitExam':
                 submitExam($_POST['exam_id'], $_POST['answers'], $_POST['time_spent']);
                 break;
+            case 'updatePretestStatus':
+                if (!isset($_POST['lesson_id'])) {
+                    echo json_encode(['success' => false, 'message' => 'Missing lesson_id']);
+                    exit;
+                }
+
+                try {
+                    $userId = $_SESSION['user_data']['id'];
+                    $lessonId = $_POST['lesson_id'];
+
+                    // อัพเดทสถานะ pretest_done เป็น 1
+                    $stmt = $db->prepare("
+                        UPDATE learning_progress 
+                        SET pretest_done = 1 
+                        WHERE user_id = ? AND lesson_id = ?
+                    ");
+                    
+                    // ถ้ายังไม่มีข้อมูลให้สร้างใหม่
+                    if ($stmt->execute([$userId, $lessonId]) && $stmt->rowCount() === 0) {
+                        $stmt = $db->prepare("
+                            INSERT INTO learning_progress 
+                            (user_id, lesson_id, pretest_done) 
+                            VALUES (?, ?, 1)
+                        ");
+                        $stmt->execute([$userId, $lessonId]);
+                    }
+
+                    echo json_encode(['success' => true]);
+                } catch (Exception $e) {
+                    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                }
+                break;
         }
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {

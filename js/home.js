@@ -382,10 +382,3 @@ $(document).ready(function () {
 
     // Your existing exam creator code...
 })();
-
-// เพิ่ม Event Listener สำหรับการ refresh page
-window.addEventListener('beforeunload', () => {
-    if (scriptManager.currentPage) {
-        unloadPageScript(scriptManager.currentPage);
-    }
-});

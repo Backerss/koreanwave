@@ -142,29 +142,58 @@ $(document).ready(function() {
         });
     }
 
+    // แก้ไขฟังก์ชัน submitExam ใน exam.js
     function submitExam() {
-        const totalQuestions = $('.question-item').length;
+        const answers = collectAnswers();
+        const examId = new URLSearchParams(window.location.search).get('exam_id');
         
-        if (answeredQuestions.size < totalQuestions) {
-            Swal.fire('คำเตือน', 'กรุณาตอบคำถามให้ครบทุกข้อ', 'warning');
-            return;
-        }
-
-        Swal.fire({
-            title: 'ยืนยันการส่งคำตอบ',
-            text: 'คุณแน่ใจหรือไม่ที่จะส่งคำตอบ?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'ส่งคำตอบ',
-            cancelButtonText: 'ยกเลิก'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                submitExamAnswers();
+        $.ajax({
+            url: '../../system/manageExams.php',
+            type: 'POST',
+            data: {
+                action: 'submit',
+                exam_id: examId,
+                answers: JSON.stringify(answers)
+            },
+            success: function(response) {
+                try {
+                    const result = typeof response === 'string' ? JSON.parse(response) : response;
+                    
+                    if (result.success) {
+                        // ถ้าเป็นแบบทดสอบก่อนเรียน อัพเดท pretest_done เป็น 1
+                        if (result.exam_type === 'pretest') {
+                            $.ajax({
+                                url: '../../system/manageExams.php',
+                                type: 'POST',
+                                data: {
+                                    action: 'updatePretestStatus',
+                                    lesson_id: result.lesson_id
+                                },
+                                success: function(updateResponse) {
+                                    showExamResult(result.score, result.totalQuestions, result.exam_type);
+                                },
+                                error: function() {
+                                    console.error('Error updating pretest status');
+                                    showExamResult(result.score, result.totalQuestions, result.exam_type);
+                                }
+                            });
+                        } else {
+                            showExamResult(result.score, result.totalQuestions, result.exam_type);
+                        }
+                    } else {
+                        Swal.fire('ผิดพลาด', 'ไม่สามารถส่งคำตอบได้', 'error');
+                    }
+                } catch (e) {
+                    console.error('Error parsing response:', e);
+                    Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการประมวลผล', 'error');
+                }
+            },
+            error: function() {
+                Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
             }
         });
     }
 
-    // Modify the existing submitExamAnswers function
     function submitExamAnswers() {
         const answers = collectAnswers();
         examSubmitted = true;
