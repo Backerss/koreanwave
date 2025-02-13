@@ -81,6 +81,13 @@ body {
     margin-left: auto;
 }
 
+/* เพิ่ม style สำหรับ elements ที่ถูก disable */
+.sidebar-menu li.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
 /* Top Navbar */
 .top-navbar {
     position: fixed;
@@ -601,4 +608,24 @@ body {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* เพิ่ม style สำหรับ elements ที่ถูก disable */
+.notification-bell.disabled,
+.user-profile .dropdown-toggle:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#sidebarToggle:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* เพิ่ม animation สำหรับการเปลี่ยนสถานะ */
+.sidebar-menu li,
+.notification-bell,
+.user-profile .dropdown-toggle,
+#sidebarToggle {
+    transition: opacity 0.3s ease;
 }

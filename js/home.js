@@ -105,9 +105,27 @@ $(document).ready(function () {
             }
         }
 
+        // เพิ่มฟังก์ชันสำหรับ toggle การใช้งาน UI
+        function toggleUIInteraction(disable = true) {
+            // Disable/Enable sidebar menu items
+            $('.sidebar-menu li').toggleClass('disabled', disable);
+            
+            // Disable/Enable notification bell
+            $('.notification-bell').toggleClass('disabled', disable).css('pointer-events', disable ? 'none' : 'auto');
+            
+            // Disable/Enable user profile dropdown
+            $('.user-profile .dropdown-toggle').prop('disabled', disable);
+            
+            // Disable/Enable sidebar toggle
+            $('#sidebarToggle').prop('disabled', disable);
+        }
+
         // ปรับปรุงฟังก์ชัน navigateToPage
         function navigateToPage($element, targetPage) {
             try {
+                // ปิดการใช้งาน UI ทั้งหมดก่อนเริ่มโหลด
+                toggleUIInteraction(true);
+                
                 localStorage.setItem('currentPage', targetPage);
 
                 if (scriptManager.currentPage) {
@@ -146,6 +164,11 @@ $(document).ready(function () {
                         title: 'เกิดข้อผิดพลาด',
                         text: 'ไม่สามารถโหลดทรัพยากรของหน้าได้'
                     });
+                }).finally(() => {
+                    // เปิดการใช้งาน UI อีกครั้งหลังจากโหลดเสร็จ
+                    setTimeout(() => {
+                        toggleUIInteraction(false);
+                    }, 300);
                 });
 
             } catch (err) {
@@ -155,6 +178,8 @@ $(document).ready(function () {
                     title: 'เกิดข้อผิดพลาด',
                     text: 'ไม่สามารถนำทางไปยังหน้าที่ต้องการได้'
                 });
+                // กรณีเกิด error ให้เปิดการใช้งาน UI
+                toggleUIInteraction(false);
             }
         }
 
