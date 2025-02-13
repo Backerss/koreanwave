@@ -25,10 +25,10 @@ $(document).ready(function () {
         $('.main-content').toggleClass('sidebar-hidden');
     });
 
-    // เพิ่มฟังก์ชันสำหรับแสดง loading ทันทีที่โหลดหน้า
+    // เพิ่มฟังก์ชันสำหรับ initial loading (แสดงเฉพาะตอนรีเฟรชหน้า)
     function showInitialLoading() {
         const loadingOverlay = `
-            <div class="page-loading-overlay" style="
+            <div class="initial-loading-overlay" style="
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -50,7 +50,7 @@ $(document).ready(function () {
         return $(loadingOverlay).appendTo('body');
     }
 
-    // แสดง loading ทันทีที่เริ่มต้น
+    // แสดง loading เมื่อรีเฟรชหน้าเท่านั้น
     const $initialLoading = showInitialLoading();
 
     try {
@@ -145,41 +145,37 @@ $(document).ready(function () {
                     unloadPageScript(scriptManager.currentPage);
                 }
 
-                // ซ่อนทุกหน้าก่อน
-                $('.page').hide().removeClass('active');
-                
-                // แสดง loading
-                showPageLoadingAnimation()
-                    .then(() => {
-                        // อัพเดท UI
-                        $('.sidebar-menu li').removeClass('active');
-                        $element.addClass('active');
-                        $('#currentPage').text($element.find('span').text() || '');
+                // อัพเดท UI ก่อน
+                $('.sidebar-menu li').removeClass('active');
+                $element.addClass('active');
+                $('#currentPage').text($element.find('span').text() || '');
 
-                        const $targetPage = $(`#${targetPage}Page`);
-                        $targetPage.addClass('active');
+                // ซ่อนหน้าเก่า
+                $('.page').fadeOut(300).removeClass('active');
 
-                        // โหลดทรัพยากร
-                        return Promise.all([
-                            loadPageScript(targetPage),
-                            loadPageStylesheet(targetPage)
-                        ]);
-                    })
-                    .then(() => {
-                        // แสดงหน้าใหม่
-                        const $targetPage = $(`#${targetPage}Page`);
-                        $targetPage.fadeIn(300);
-                        scriptManager.currentPage = targetPage;
-                        $(document).trigger('pageChanged', [targetPage + 'Page']);
-                    })
-                    .catch(error => {
-                        console.error('Error loading page resources:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'เกิดข้อผิดพลาด',
-                            text: 'ไม่สามารถโหลดทรัพยากรของหน้าได้'
-                        });
+                // โหลดทรัพยากรและแสดงหน้าใหม่
+                const $targetPage = $(`#${targetPage}Page`);
+                $targetPage.hide().addClass('active');
+
+                // รอให้ทรัพยากรโหลดเสร็จ
+                Promise.all([
+                    loadPageScript(targetPage),
+                    loadPageStylesheet(targetPage),
+                    new Promise(resolve => setTimeout(resolve, 300)) // รอให้การเปลี่ยนหน้าเสร็จสมบูรณ์
+                ]).then(() => {
+                    // แสดงหน้าใหม่ด้วย fade effect
+                    $targetPage.fadeIn(300);
+                    scriptManager.currentPage = targetPage;
+                    $(document).trigger('pageChanged', [targetPage + 'Page']);
+                }).catch(error => {
+                    console.error('Error loading page resources:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถโหลดทรัพยากรของหน้าได้'
                     });
+                });
+
             } catch (err) {
                 console.error('Navigation error:', err);
                 Swal.fire({
@@ -271,8 +267,10 @@ $(document).ready(function () {
         if (savedPage) {
             const $menuItem = $(`.sidebar-menu li[data-page="${savedPage}"]`);
             if ($menuItem.length) {
-                // โหลดหน้าที่บันทึกไว้ทันที
-                navigateToPage($menuItem, savedPage);
+                // รอให้ initial loading แสดงผลก่อน
+                setTimeout(() => {
+                    navigateToPage($menuItem, savedPage);
+                }, 300);
             }
         }
 
@@ -411,12 +409,12 @@ $(document).ready(function () {
         console.error('Global initialization error:', err);
     }
 
-    // ลบ loading เริ่มต้นหลังจากโหลดเสร็จ
+    // ลบ initial loading หลังจากโหลดเสร็จ
     setTimeout(() => {
         $initialLoading.fadeOut(300, function() {
             $(this).remove();
         });
-    }, 500);
+    }, 800);
 
     // Cleanup function for page unload
     $(window).on('unload', function () {
