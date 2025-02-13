@@ -31,19 +31,21 @@ $(document).ready(function () {
             const scriptPath = scriptManager.scriptMap[pageName];
             if (!scriptPath) return Promise.resolve();
 
-            // ถ้าสคริปต์ถูกโหลดแล้ว ให้ return Promise ที่ resolve แล้ว
-            if (scriptManager.loadedScripts.has(scriptPath)) {
-                return Promise.resolve();
+            // Remove existing script if it exists
+            const existingScript = scriptManager.loadedScripts.get(scriptPath);
+            if (existingScript) {
+                existingScript.remove();
+                scriptManager.loadedScripts.delete(scriptPath);
             }
 
-            // สร้าง Promise สำหรับการโหลดสคริปต์
+            // Create and load new script
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                script.src = `${scriptPath}?v=${new Date().getTime()}`; // เพิ่ม timestamp เพื่อป้องกัน cache
+                // Add timestamp to force browser to load new version
+                script.src = `${scriptPath}?v=${Date.now()}`;
                 script.type = 'text/javascript';
 
                 script.onload = () => {
-
                     scriptManager.loadedScripts.set(scriptPath, script);
                     resolve();
                 };
@@ -363,9 +365,13 @@ $(document).ready(function () {
         if (clockInterval) {
             clearInterval(clockInterval);
         }
-        if (currentScript) {
-            currentScript.remove();
-        }
+        
+        // Clean up all loaded scripts
+        scriptManager.loadedScripts.forEach((script, path) => {
+            script.remove();
+        });
+        scriptManager.loadedScripts.clear();
+        
         if (currentStylesheet) {
             currentStylesheet.remove();
         }
