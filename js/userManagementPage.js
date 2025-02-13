@@ -3,146 +3,158 @@ $(document).ready(function() {
     let isTableInitialized = false;
     let isLoading = false;
     let initializeTimeout = null;
+    let retryCount = 0;
+    const maxRetries = 3;
 
-    // Function to initialize DataTable
+    // Function to initialize DataTable with retry mechanism
     function initializeDataTable() {
-        if (isLoading || isTableInitialized) return;
+        if (isLoading) return;
 
-        // Clear existing timeout if any
+        // Clear existing timeout
         if (initializeTimeout) {
             clearTimeout(initializeTimeout);
         }
 
-        // ตรวจสอบว่ามีตารางอยู่จริง
+        // Check if table exists
         if (!$('#usersTable').length) {
-            console.error('Table element not found');
+            retryCount++;
+            if (retryCount <= maxRetries) {
+                console.log(`Table not found, retrying... (${retryCount}/${maxRetries})`);
+                initializeTimeout = setTimeout(initializeDataTable, 1000);
+                return;
+            }
+            console.error('Table element not found after maximum retries');
             return;
         }
-        
-        isLoading = true;
 
-        // Properly destroy existing DataTable
+        isLoading = true;
+        retryCount = 0; // Reset retry count
+
+        // Destroy existing DataTable if any
         if ($.fn.DataTable.isDataTable('#usersTable')) {
             $('#usersTable').DataTable().destroy();
             $('#usersTable').empty();
         }
 
-        // รอให้ DOM พร้อมก่อน initialize
-        initializeTimeout = setTimeout(() => {
-            try {
-                usersTable = $('#usersTable').DataTable({
-                    ajax: {
-                        url: '../../system/manageUsers.php',
-                        type: 'GET',
-                        data: { action: 'list' },
-                        dataSrc: function(response) {
-                            isLoading = false;
-                            if (!response || !response.data) {
-                                console.error('Invalid response:', response);
-                                return [];
-                            }
-                            return response.data;
-                        },
-                        error: function(xhr, error, thrown) {
-                            isLoading = false;
-                            console.error('DataTable error:', error);
-                            console.error('XHR:', xhr.responseText);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'เกิดข้อผิดพลาด',
-                                text: 'ไม่สามารถโหลดข้อมูลได้'
-                            });
-                        }
-                    },
-                    columns: [
-                        { data: 'student_id', defaultContent: '-' },
-                        { 
-                            data: null,
-                            render: function(data) {
-                                return data ? `${data.first_name || ''} ${data.last_name || ''}` : '-';
-                            }
-                        },
-                        { data: 'email', defaultContent: '-' },
-                        {
-                            data: null,
-                            render: function(data) {
-                                if (!data || data.role !== 'student') return '-';
-                                return `ม.${data.grade_level || '-'}/${data.classroom || '-'}`;
-                            }
-                        },
-                        {
-                            data: null,
-                            render: function(data) {
-                                if (!data) return '-';
-                                const roles = {
-                                    'student': 'นักเรียน',
-                                    'teacher': 'ครู',
-                                    'admin': 'ผู้ดูแลระบบ'
-                                };
-                                return roles[data.role] || '-';
-                            }
-                        },
-                        {
-                            data: 'created_at',
-                            render: function(data) {
-                                return data ? new Date(data).toLocaleString('th-TH') : '-';
-                            }
-                        },
-                        {
-                            data: 'updated_at',
-                            render: function(data) {
-                                return data ? new Date(data).toLocaleString('th-TH') : '-';
-                            }
-                        },
-                        {
-                            data: null,
-                            orderable: false,
-                            render: function(data) {
-                                return `
-                                    <div class="btn-group">
-                                        <button class="btn btn-sm btn-warning edit-user" data-id="${data.id}">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger delete-user" data-id="${data.id}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                `;
-                            }
-                        }
-                    ],
-                    responsive: true,
-                    dom: 'lBfrtip',
-                    order: [[5, 'desc']],
-                    processing: true,
-                    serverSide: false,
-                    language: {
-                        processing: "กำลังโหลดข้อมูล...",
-                        search: "ค้นหา:",
-                        lengthMenu: "แสดง _MENU_ รายการ",
-                        info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
-                        infoEmpty: "แสดง 0 ถึง 0 จาก 0 รายการ",
-                        infoFiltered: "(กรองจากทั้งหมด _MAX_ รายการ)",
-                        loadingRecords: "กำลังโหลดข้อมูล...",
-                        zeroRecords: "ไม่พบข้อมูล",
-                        emptyTable: "ไม่มีข้อมูล"
-                    },
-                    drawCallback: function() {
-                        isTableInitialized = true;
+        try {
+            usersTable = $('#usersTable').DataTable({
+                ajax: {
+                    url: '../../system/manageUsers.php',
+                    type: 'GET',
+                    data: { action: 'list' },
+                    dataSrc: function(response) {
                         isLoading = false;
+                        if (!response || !response.data) {
+                            console.error('Invalid response:', response);
+                            return [];
+                        }
+                        return response.data;
+                    },
+                    error: function(xhr, error, thrown) {
+                        isLoading = false;
+                        console.error('DataTable error:', error);
+                        console.error('XHR:', xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถโหลดข้อมูลได้'
+                        });
                     }
-                });
-            } catch (error) {
-                isLoading = false;
-                isTableInitialized = false;
-                console.error('Error initializing DataTable:', error);
+                },
+                columns: [
+                    { data: 'student_id', defaultContent: '-' },
+                    { 
+                        data: null,
+                        render: function(data) {
+                            return data ? `${data.first_name || ''} ${data.last_name || ''}` : '-';
+                        }
+                    },
+                    { data: 'email', defaultContent: '-' },
+                    {
+                        data: null,
+                        render: function(data) {
+                            if (!data || data.role !== 'student') return '-';
+                            return `ม.${data.grade_level || '-'}/${data.classroom || '-'}`;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data) {
+                            if (!data) return '-';
+                            const roles = {
+                                'student': 'นักเรียน',
+                                'teacher': 'ครู',
+                                'admin': 'ผู้ดูแลระบบ'
+                            };
+                            return roles[data.role] || '-';
+                        }
+                    },
+                    {
+                        data: 'created_at',
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleString('th-TH') : '-';
+                        }
+                    },
+                    {
+                        data: 'updated_at',
+                        render: function(data) {
+                            return data ? new Date(data).toLocaleString('th-TH') : '-';
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data) {
+                            return `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning edit-user" data-id="${data.id}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-user" data-id="${data.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ],
+                responsive: true,
+                dom: 'lBfrtip',
+                order: [[5, 'desc']],
+                processing: true,
+                serverSide: false,
+                language: {
+                    processing: "กำลังโหลดข้อมูล...",
+                    search: "ค้นหา:",
+                    lengthMenu: "แสดง _MENU_ รายการ",
+                    info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+                    infoEmpty: "แสดง 0 ถึง 0 จาก 0 รายการ",
+                    infoFiltered: "(กรองจากทั้งหมด _MAX_ รายการ)",
+                    loadingRecords: "กำลังโหลดข้อมูล...",
+                    zeroRecords: "ไม่พบข้อมูล",
+                    emptyTable: "ไม่มีข้อมูล"
+                },
+                drawCallback: function() {
+                    isTableInitialized = true;
+                    isLoading = false;
+                }
+            });
+        } catch (error) {
+            isLoading = false;
+            isTableInitialized = false;
+            console.error('Error initializing DataTable:', error);
+            if (retryCount <= maxRetries) {
+                retryCount++;
+                console.log(`Retrying initialization... (${retryCount}/${maxRetries})`);
+                initializeTimeout = setTimeout(initializeDataTable, 1000);
+            } else {
                 Swal.fire({
                     icon: 'error',
                     title: 'เกิดข้อผิดพลาด',
                     text: 'ไม่สามารถสร้างตารางข้อมูลได้: ' + error.message
                 });
             }
-        }, 1000); // เพิ่มเวลา delay
+        }
     }
 
     // เพิ่มหลัง DataTable initialization
@@ -414,20 +426,15 @@ $(document).ready(function() {
 
     // Initialize table when page loads
     if ($('#usersPage').hasClass('active')) {
-        setTimeout(initializeDataTable, 100);
+        initializeTimeout = setTimeout(initializeDataTable, 500);
     }
 
     // Bind to page navigation event with debounce
     let navigationTimeout = null;
     $(document).on('pageChanged', function(e, pageId) {
         if (pageId === 'users') {
-            if (navigationTimeout) {
-                clearTimeout(navigationTimeout);
-            }
-            navigationTimeout = setTimeout(() => {
-                isTableInitialized = false;
-                initializeDataTable();
-            }, 1000);
+            retryCount = 0; // Reset retry count
+            initializeTimeout = setTimeout(initializeDataTable, 500);
         }
     });
 
