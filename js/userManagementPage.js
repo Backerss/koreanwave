@@ -3,51 +3,71 @@ $(document).ready(function() {
     let usersTable = null;
     let isLoading = false;
     let pageInitialized = false;
-    let currentModal = null;  // เพิ่มตัวแปรเก็บ modal ปัจจุบัน
-    let isProcessing = false; // เพิ่มตัวแปรควบคุมการทำงาน
+    let currentModal = null;
+    let isProcessing = false;
+    let modalInstance = null; // เพิ่มตัวแปรเก็บ instance ของ modal
 
-    // ฟังก์ชันสำหรับ cleanup events และ modal
+    // ปรับปรุงฟังก์ชัน cleanupModalEvents
     function cleanupModalEvents() {
-        // ลบ event handlers ทั้งหมดที่เกี่ยวกับ modal
-        $('#addUserModal, #editUserModal').off();
+        // ล้าง events และ modal ทั้งหมด
+        if (modalInstance) {
+            modalInstance.dispose();
+            modalInstance = null;
+        }
+        $('#addUserModal, #editUserModal').off().modal('dispose');
         $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open');
-        
-        // ซ่อน modal ที่อาจค้างอยู่
-        $('#addUserModal, #editUserModal').modal('hide');
+        $('body').removeClass('modal-open').css('padding-right', '');
         currentModal = null;
         isProcessing = false;
     }
 
-    // ปรับปรุง event handlers สำหรับ modal
+    // ปรับปรุงฟังก์ชัน initializeModalHandlers
     function initializeModalHandlers() {
-        // Cleanup ก่อน bind events ใหม่
         cleanupModalEvents();
 
-        // จัดการ events เมื่อ modal ถูกปิด
-        $('#addUserModal, #editUserModal').on('hidden.bs.modal', function() {
-            const $form = $(this).find('form');
-            $form[0].reset();
-            $form.find('.is-invalid').removeClass('is-invalid');
-            currentModal = null;
-            isProcessing = false;
-        });
+        const modals = document.querySelectorAll('#addUserModal, #editUserModal');
+        modals.forEach(modal => {
+            modalInstance = new bootstrap.Modal(modal, {
+                backdrop: 'static',
+                keyboard: false
+            });
 
-        // จัดการ events เมื่อ modal เปิด
-        $('#addUserModal, #editUserModal').on('show.bs.modal', function() {
-            if (currentModal) {
-                currentModal.modal('hide');
-            }
-            currentModal = $(this);
-            isProcessing = true;
-        });
+            modal.addEventListener('show.bs.modal', function(e) {
+                if (isProcessing) {
+                    e.preventDefault();
+                    return;
+                }
+                if (currentModal) {
+                    const currentModalInstance = bootstrap.Modal.getInstance(currentModal);
+                    if (currentModalInstance) {
+                        currentModalInstance.hide();
+                    }
+                }
+                isProcessing = true;
+                currentModal = this;
+            });
 
-        $('.modal').on('shown.bs.modal', function() {
-            isProcessing = false;
+            modal.addEventListener('shown.bs.modal', function() {
+                isProcessing = false;
+            });
+
+            modal.addEventListener('hidden.bs.modal', function() {
+                const form = this.querySelector('form');
+                if (form) {
+                    form.reset();
+                    form.querySelectorAll('.is-invalid').forEach(el => {
+                        el.classList.remove('is-invalid');
+                    });
+                }
+                if (currentModal === this) {
+                    currentModal = null;
+                }
+                isProcessing = false;
+            });
         });
     }
 
-    // ปรับปรุง event handlers สำหรับปุ่มต่างๆ
+    // ปรับปรุงฟังก์ชัน initializeButtonHandlers
     function initializeButtonHandlers() {
         // ลบ event handlers เดิม
         $(document).off('click', '.edit-user, .delete-user');
@@ -146,7 +166,7 @@ $(document).ready(function() {
                         data: null,
                         render: function(data) {
                             return data.role === 'student' 
-                                ? `ม.${data.grade_level || '-'}/${data.classroom || '-'}`
+                                ? `ม.${data.grade_level || '-'}/${data.classroom || '-'}` 
                                 : '-';
                         }
                     },
@@ -207,21 +227,16 @@ $(document).ready(function() {
 
     // Page Navigation Handler
     $(document).on('pageChanged', function(e, pageId) {
-        if (pageId === 'users') {
-            // รอให้ DOM พร้อมก่อน initialize
+        cleanupModalEvents(); // ทำความสะอาดก่อนเปลี่ยนหน้า
+        
+        if (pageId === 'usersPage') {
             setTimeout(() => {
+                initializeModalHandlers();
+                initializeButtonHandlers();
                 if ($('#usersTable').length) {
                     initializeDataTable();
                 }
             }, 300);
-        } else {
-            // Cleanup when leaving page
-            if ($.fn.DataTable.isDataTable('#usersTable')) {
-                $('#usersTable').DataTable().destroy();
-                $('#usersTable tbody').empty();
-            }
-            pageInitialized = false;
-            isLoading = false;
         }
     });
 
@@ -379,7 +394,7 @@ $(document).ready(function() {
 
     // CRUD Operations
     function loadUserData(id) {
-        if (isLoading) return;
+        if (isLoading || isProcessing) return;
         isLoading = true;
 
         $.get('../../system/manageUsers.php', { 
@@ -389,7 +404,10 @@ $(document).ready(function() {
         .done(function(response) {
             if (response.success) {
                 populateForm('#editUserForm', response.user);
-                $('#editUserModal').modal('show');
+                const editModal = document.querySelector('#editUserModal');
+                if (editModal && modalInstance) {
+                    modalInstance.show();
+                }
             } else {
                 handleError(response.message);
             }
@@ -460,21 +478,6 @@ $(document).ready(function() {
             timer: 1500
         });
     }
-
-    // เพิ่ม event handler สำหรับการเปลี่ยนหน้า
-    $(document).on('pageChanged', function(e, pageId) {
-        if (pageId === 'usersPage') {
-            initializeModalHandlers();
-            initializeButtonHandlers();
-            if ($('#usersTable').length) {
-                setTimeout(() => {
-                    initializeDataTable();
-                }, 300);
-            }
-        } else {
-            cleanupModalEvents();
-        }
-    });
 
     // เพิ่ม CSS สำหรับป้องกัน modal ซ้อนทับ
     $('<style>')
