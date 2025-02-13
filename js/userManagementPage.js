@@ -2,10 +2,16 @@ $(document).ready(function() {
     let usersTable = null;
     let isTableInitialized = false;
     let isLoading = false;
+    let initializeTimeout = null;
 
     // Function to initialize DataTable
     function initializeDataTable() {
-        if (isLoading) return;
+        if (isLoading || isTableInitialized) return;
+
+        // Clear existing timeout if any
+        if (initializeTimeout) {
+            clearTimeout(initializeTimeout);
+        }
 
         // ตรวจสอบว่ามีตารางอยู่จริง
         if (!$('#usersTable').length) {
@@ -13,15 +19,17 @@ $(document).ready(function() {
             return;
         }
         
-        // Clear any existing DataTable instance
+        isLoading = true;
+
+        // Properly destroy existing DataTable
         if ($.fn.DataTable.isDataTable('#usersTable')) {
             $('#usersTable').DataTable().destroy();
+            $('#usersTable').empty();
         }
 
         // รอให้ DOM พร้อมก่อน initialize
-        setTimeout(() => {
+        initializeTimeout = setTimeout(() => {
             try {
-                isLoading = true;
                 usersTable = $('#usersTable').DataTable({
                     ajax: {
                         url: '../../system/manageUsers.php',
@@ -126,6 +134,7 @@ $(document).ready(function() {
                 });
             } catch (error) {
                 isLoading = false;
+                isTableInitialized = false;
                 console.error('Error initializing DataTable:', error);
                 Swal.fire({
                     icon: 'error',
@@ -133,7 +142,7 @@ $(document).ready(function() {
                     text: 'ไม่สามารถสร้างตารางข้อมูลได้: ' + error.message
                 });
             }
-        }, 100);
+        }, 1000); // เพิ่มเวลา delay
     }
 
     // เพิ่มหลัง DataTable initialization
@@ -408,20 +417,35 @@ $(document).ready(function() {
         setTimeout(initializeDataTable, 100);
     }
 
-    // Bind to page navigation event
+    // Bind to page navigation event with debounce
+    let navigationTimeout = null;
     $(document).on('pageChanged', function(e, pageId) {
         if (pageId === 'users') {
-            setTimeout(initializeDataTable, 100);
+            if (navigationTimeout) {
+                clearTimeout(navigationTimeout);
+            }
+            navigationTimeout = setTimeout(() => {
+                isTableInitialized = false;
+                initializeDataTable();
+            }, 1000);
         }
     });
 
     // Cleanup when leaving page
     $('.sidebar-menu li').on('click', function() {
         if ($(this).data('page') !== 'users') {
-            if ($.fn.DataTable.isDataTable('#usersTable')) {
-                $('#usersTable').DataTable().destroy();
+            if (usersTable) {
+                usersTable.destroy();
+                $('#usersTable').empty();
             }
             isTableInitialized = false;
+            isLoading = false;
+            if (initializeTimeout) {
+                clearTimeout(initializeTimeout);
+            }
+            if (navigationTimeout) {
+                clearTimeout(navigationTimeout);
+            }
         }
     });
 });
