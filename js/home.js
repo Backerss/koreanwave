@@ -25,34 +25,6 @@ $(document).ready(function () {
         $('.main-content').toggleClass('sidebar-hidden');
     });
 
-    // เพิ่มฟังก์ชันสำหรับ initial loading (แสดงเฉพาะตอนรีเฟรชหน้า)
-    function showInitialLoading() {
-        const loadingOverlay = `
-            <div class="initial-loading-overlay" style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: #ffffff;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 9999;">
-                <div class="loading-spinner">
-                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="visually-hidden">กำลังโหลด...</span>
-                    </div>
-                    <div class="mt-2 text-primary">กำลังโหลด...</div>
-                </div>
-            </div>
-        `;
-        return $(loadingOverlay).appendTo('body');
-    }
-
-    // แสดง loading เมื่อรีเฟรชหน้าเท่านั้น
-    const $initialLoading = showInitialLoading();
-
     try {
         // ฟังก์ชันสำหรับการโหลดสคริปต์
         function loadPageScript(pageName) {
@@ -408,13 +380,6 @@ $(document).ready(function () {
     } catch (err) {
         console.error('Global initialization error:', err);
     }
-
-    // ลบ initial loading หลังจากโหลดเสร็จ
-    setTimeout(() => {
-        $initialLoading.fadeOut(300, function() {
-            $(this).remove();
-        });
-    }, 800);
 
     // Cleanup function for page unload
     $(window).on('unload', function () {

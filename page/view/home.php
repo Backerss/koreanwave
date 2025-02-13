@@ -34,9 +34,50 @@ if (!isset($_SESSION['user_data'])) {
     <link rel="stylesheet" href="../../css/home.css">
     <link rel="stylesheet" href="../../css/gradesPage.css">
     <link rel="stylesheet" href="../../css/lessonpage.css">
+
+    <style>
+        /* Add loading overlay styles */
+        .initial-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .initial-loading-overlay.fade-out {
+            opacity: 0;
+        }
+
+        .loading-spinner {
+            text-align: center;
+        }
+
+        .loading-spinner .spinner-text {
+            margin-top: 10px;
+            color: var(--primary-color);
+        }
+    </style>
 </head>
 
 <body>
+    <!-- Add loading overlay at the start of body -->
+    <div class="initial-loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">กำลังโหลด...</span>
+            </div>
+            <div class="spinner-text">กำลังโหลด...</div>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
@@ -172,6 +213,20 @@ if (!isset($_SESSION['user_data'])) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../../js/home.js"></script>
+
+    <script>
+        // Add this before your main home.js script
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide loading overlay after everything is loaded
+            setTimeout(() => {
+                const loadingOverlay = document.querySelector('.initial-loading-overlay');
+                loadingOverlay.classList.add('fade-out');
+                setTimeout(() => {
+                    loadingOverlay.remove();
+                }, 300);
+            }, 800);
+        });
+    </script>
 </body>
 
 </html>
