@@ -272,3 +272,17 @@ body {
     justify-content: center;
     align-items: center;
 }
+
+/* ป้องกัน modal ซ้อนทับ */
+.modal {
+    z-index: 1050 !important;
+}
+
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+/* ปรับปรุง animation ของ modal */
+.modal.fade .modal-dialog {
+    transition: transform 0.2s ease-out !important;
+}

@@ -4,6 +4,7 @@ $(document).ready(function() {
     let isLoading = false;
     let pageInitialized = false;
     let currentModal = null;  // เพิ่มตัวแปรเก็บ modal ปัจจุบัน
+    let isProcessing = false; // เพิ่มตัวแปรควบคุมการทำงาน
 
     // ฟังก์ชันสำหรับ cleanup events และ modal
     function cleanupModalEvents() {
@@ -14,6 +15,8 @@ $(document).ready(function() {
         
         // ซ่อน modal ที่อาจค้างอยู่
         $('#addUserModal, #editUserModal').modal('hide');
+        currentModal = null;
+        isProcessing = false;
     }
 
     // ปรับปรุง event handlers สำหรับ modal
@@ -27,6 +30,7 @@ $(document).ready(function() {
             $form[0].reset();
             $form.find('.is-invalid').removeClass('is-invalid');
             currentModal = null;
+            isProcessing = false;
         });
 
         // จัดการ events เมื่อ modal เปิด
@@ -35,6 +39,11 @@ $(document).ready(function() {
                 currentModal.modal('hide');
             }
             currentModal = $(this);
+            isProcessing = true;
+        });
+
+        $('.modal').on('shown.bs.modal', function() {
+            isProcessing = false;
         });
     }
 
@@ -48,6 +57,7 @@ $(document).ready(function() {
         $(document).on('click', '.edit-user', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            if (isProcessing) return;
             const id = $(this).data('id');
             loadUserData(id);
         });
@@ -465,4 +475,20 @@ $(document).ready(function() {
             cleanupModalEvents();
         }
     });
+
+    // เพิ่ม CSS สำหรับป้องกัน modal ซ้อนทับ
+    $('<style>')
+        .prop('type', 'text/css')
+        .html(`
+            .modal {
+                z-index: 1050 !important;
+            }
+            .modal-backdrop {
+                z-index: 1040 !important;
+            }
+            .modal-backdrop + .modal-backdrop {
+                display: none !important;
+            }
+        `)
+        .appendTo('head');
 });
