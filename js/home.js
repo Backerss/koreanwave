@@ -1,6 +1,6 @@
 $(document).ready(function () {
 
-    console.log('Home page loaded');
+    console.log('Home page loaded test on web');
     let currentScript = null;
     let currentStylesheet = null;
     const loadedScripts = new Set();
