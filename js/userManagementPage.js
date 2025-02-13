@@ -1,140 +1,13 @@
 $(document).ready(function() {
     // Global variables
     let usersTable = null;
+    const modalInstances = new Map();
     let isLoading = false;
-    let pageInitialized = false;
-    let currentModal = null;
-    let isProcessing = false;
-    let modalInstance = null; // เพิ่มตัวแปรเก็บ instance ของ modal
 
-    // ปรับปรุงฟังก์ชัน cleanupModalEvents
-    function cleanupModalEvents() {
-        // ล้าง events และ modal ทั้งหมด
-        if (modalInstance) {
-            modalInstance.dispose();
-            modalInstance = null;
-        }
-        $('#addUserModal, #editUserModal').off().modal('dispose');
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open').css('padding-right', '');
-        currentModal = null;
-        isProcessing = false;
-    }
-
-    // ปรับปรุงฟังก์ชัน initializeModalHandlers
-    function initializeModalHandlers() {
-        cleanupModalEvents();
-
-        const modals = document.querySelectorAll('#addUserModal, #editUserModal');
-        modals.forEach(modal => {
-            modalInstance = new bootstrap.Modal(modal, {
-                backdrop: 'static',
-                keyboard: false
-            });
-
-            modal.addEventListener('show.bs.modal', function(e) {
-                if (isProcessing) {
-                    e.preventDefault();
-                    return;
-                }
-                if (currentModal) {
-                    const currentModalInstance = bootstrap.Modal.getInstance(currentModal);
-                    if (currentModalInstance) {
-                        currentModalInstance.hide();
-                    }
-                }
-                isProcessing = true;
-                currentModal = this;
-            });
-
-            modal.addEventListener('shown.bs.modal', function() {
-                isProcessing = false;
-            });
-
-            modal.addEventListener('hidden.bs.modal', function() {
-                const form = this.querySelector('form');
-                if (form) {
-                    form.reset();
-                    form.querySelectorAll('.is-invalid').forEach(el => {
-                        el.classList.remove('is-invalid');
-                    });
-                }
-                if (currentModal === this) {
-                    currentModal = null;
-                }
-                isProcessing = false;
-            });
-        });
-    }
-
-    // ปรับปรุงฟังก์ชัน initializeButtonHandlers
-    function initializeButtonHandlers() {
-        // ลบ event handlers เดิม
-        $(document).off('click', '.edit-user, .delete-user');
-        $('#saveUser, #updateUser').off('click');
-
-        // Bind events ใหม่
-        $(document).on('click', '.edit-user', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (isProcessing) return;
-            const id = $(this).data('id');
-            loadUserData(id);
-        });
-
-        $(document).on('click', '.delete-user', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const id = $(this).data('id');
-            confirmDelete(id);
-        });
-
-        $('#saveUser').on('click', function(e) {
-            e.preventDefault();
-            handleFormSubmit('add', '#addUserForm');
-        });
-
-        $('#updateUser').on('click', function(e) {
-            e.preventDefault();
-            handleFormSubmit('update', '#editUserForm');
-        });
-    }
-
-    // Add debounce function
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    // Initialize DataTable function
-    function initializeDataTable() {
-        // ตรวจสอบว่ามีตารางอยู่จริงหรือไม่
-        if (!$('#usersTable').length) {
-            console.error('Table element not found');
-            return;
-        }
-
-        // ป้องกันการ initialize ซ้ำ
-        if (isLoading) return;
-        isLoading = true;
-
+    // ฟังก์ชันสำหรับจัดการ DataTable
+    function setupDataTable() {
         try {
-            // Cleanup existing DataTable
-            if ($.fn.DataTable.isDataTable('#usersTable')) {
-                let existingTable = $('#usersTable').DataTable();
-                existingTable.clear().destroy();
-                $('#usersTable tbody').empty();
-            }
-
-            // สร้าง DataTable ใหม่
-            usersTable = $('#usersTable').DataTable({
+            const tableConfig = {
                 processing: true,
                 serverSide: false,
                 responsive: true,
@@ -142,177 +15,245 @@ $(document).ready(function() {
                     url: '../../system/manageUsers.php',
                     type: 'GET',
                     data: { action: 'list' },
-                    dataSrc: function(response) {
-                        isLoading = false;
-                        pageInitialized = true;
-                        return response.data || [];
-                    }
+                    dataSrc: response => response.success ? response.data : []
                 },
                 columns: [
                     { 
                         data: 'student_id',
-                        render: function(data, type, row) {
-                            return row.role === 'student' ? (data || '-') : '-';
-                        }
+                        render: (data, type, row) => row.role === 'student' ? (data || '-') : '-'
                     },
                     { 
                         data: null,
-                        render: function(data) {
-                            return `${data.first_name || ''} ${data.last_name || ''}`;
-                        }
+                        render: data => `${data.first_name || ''} ${data.last_name || ''}`
                     },
                     { data: 'email' },
                     {
                         data: null,
-                        render: function(data) {
-                            return data.role === 'student' 
-                                ? `ม.${data.grade_level || '-'}/${data.classroom || '-'}` 
-                                : '-';
-                        }
+                        render: data => data.role === 'student' 
+                            ? `ม.${data.grade_level || '-'}/${data.classroom || '-'}` 
+                            : '-'
                     },
                     {
                         data: 'role',
-                        render: function(data) {
-                            const roles = {
-                                'student': 'นักเรียน',
-                                'teacher': 'ครู',
-                                'admin': 'ผู้ดูแลระบบ'
-                            };
-                            return roles[data] || data;
-                        }
+                        render: data => ({
+                            'student': 'นักเรียน',
+                            'teacher': 'ครู',
+                            'admin': 'ผู้ดูแลระบบ'
+                        })[data] || data
                     },
                     {
                         data: 'created_at',
-                        render: function(data) {
-                            return new Date(data).toLocaleString('th-TH');
-                        }
+                        render: data => new Date(data).toLocaleString('th-TH')
                     },
                     {
                         data: 'updated_at',
-                        render: function(data) {
-                            return new Date(data).toLocaleString('th-TH');
-                        }
+                        render: data => new Date(data).toLocaleString('th-TH')
                     },
                     {
                         data: null,
                         orderable: false,
-                        render: function(data) {
-                            return `
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-warning edit-user" data-id="${data.id}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger delete-user" data-id="${data.id}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            `;
-                        }
+                        render: data => `
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-warning edit-user" data-id="${data.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-user" data-id="${data.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        `
                     }
                 ],
                 order: [[5, 'desc']],
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/th.json'
+                    "emptyTable": "ไม่พบข้อมูล",
+                    "info": "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+                    "infoEmpty": "แสดง 0 ถึง 0 จาก 0 รายการ",
+                    "infoFiltered": "(กรองข้อมูล _MAX_ ทุกรายการ)",
+                    "infoThousands": ",",
+                    "lengthMenu": "แสดง _MENU_ รายการ",
+                    "loadingRecords": "กำลังโหลดข้อมูล...",
+                    "processing": "กำลังดำเนินการ...",
+                    "search": "ค้นหา:",
+                    "zeroRecords": "ไม่พบข้อมูล",
+                    "paginate": {
+                        "first": "หน้าแรก",
+                        "previous": "ก่อนหน้า",
+                        "next": "ถัดไป",
+                        "last": "หน้าสุดท้าย"
+                    }
                 },
-                drawCallback: function() {
-                    isLoading = false;
-                }
-            });
-        } catch (error) {
-            console.error('Error initializing DataTable:', error);
-            isLoading = false;
-            pageInitialized = false;
-        }
-    }
+                destroy: true,
+                retrieve: true
+            };
 
-    // Page Navigation Handler
-    $(document).on('pageChanged', function(e, pageId) {
-        cleanupModalEvents(); // ทำความสะอาดก่อนเปลี่ยนหน้า
-        
-        if (pageId === 'usersPage') {
-            setTimeout(() => {
-                initializeModalHandlers();
-                initializeButtonHandlers();
-                if ($('#usersTable').length) {
-                    initializeDataTable();
+            // เช็คว่ามีตารางอยู่แล้วหรือไม่
+            if ($.fn.DataTable.isDataTable('#usersTable')) {
+                const existingTable = $('#usersTable').DataTable();
+                if (existingTable) {
+                    existingTable.clear().destroy();
                 }
-            }, 300);
-        }
-    });
+            }
 
-    // Initialize on page load if we're on users page
-    if ($('#usersPage').hasClass('active')) {
-        setTimeout(() => {
+            // สร้างตารางใหม่
             if ($('#usersTable').length) {
-                initializeDataTable();
+                usersTable = $('#usersTable').DataTable(tableConfig);
+
+                // จัดการ error
+                usersTable.on('error.dt', (e, settings, techNote, message) => {
+                    console.error('DataTable error:', message);
+                    showAlert('error', 'ไม่สามารถโหลดข้อมูลตารางได้');
+                });
+            } else {
+                console.error('Table element not found');
+                showAlert('error', 'ไม่พบตารางข้อมูล');
             }
-        }, 300);
+
+        } catch (error) {
+            console.error('Setup DataTable error:', error);
+            showAlert('error', 'เกิดข้อผิดพลาดในการตั้งค่าตาราง');
+        }
     }
 
-    // Add loading indicator to CSS
-    $('<style>')
-        .prop('type', 'text/css')
-        .html(`
-            .navigation-disabled {
-                pointer-events: none;
-                opacity: 0.6;
+    // ฟังก์ชันจัดการ Modal
+    function setupModals() {
+        // ล้าง instances เดิม
+        modalInstances.forEach(instance => {
+            try {
+                instance.dispose();
+            } catch (error) {
+                console.warn('Modal cleanup warning:', error);
             }
-            .page-loading {
-                position: relative;
+        });
+        modalInstances.clear();
+
+        // สร้าง instances ใหม่
+        ['#addUserModal', '#editUserModal'].forEach(modalId => {
+            const element = document.querySelector(modalId);
+            if (element) {
+                const modal = new bootstrap.Modal(element, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                modalInstances.set(modalId, modal);
+
+                // จัดการ event เมื่อ modal ถูกซ่อน
+                element.addEventListener('hidden.bs.modal', function() {
+                    const form = this.querySelector('form');
+                    if (form) {
+                        form.reset();
+                        form.querySelectorAll('.is-invalid').forEach(el => 
+                            el.classList.remove('is-invalid')
+                        );
+                    }
+                    // ล้าง backdrop และ class ที่เกี่ยวข้อง
+                    document.body.classList.remove('modal-open');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                });
+
+                // เพิ่ม event listener สำหรับปุ่มยกเลิก
+                element.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const currentModal = bootstrap.Modal.getInstance(element);
+                        if (currentModal) {
+                            currentModal.hide();
+                            // รีเซ็ตฟอร์มทันที
+                            const form = element.querySelector('form');
+                            if (form) {
+                                form.reset();
+                                form.querySelectorAll('.is-invalid').forEach(el => 
+                                    el.classList.remove('is-invalid')
+                                );
+                            }
+                        }
+                    });
+                });
             }
-            .page-loading:after {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(255, 255, 255, 0.8);
-                z-index: 1000;
-            }
-        `)
-        .appendTo('head');
+        });
+    }
 
-    // Event Handlers
-    $('#addUserForm, #editUserForm').on('change', '[name="role"]', function() {
-        const form = $(this).closest('form');
-        const isStudent = $(this).val() === 'student';
-        toggleStudentFields(form, isStudent);
-    });
+    // ฟังก์ชันจัดการ Events
+    function setupEventHandlers() {
+        // จัดการการเปลี่ยนประเภทผู้ใช้
+        $('#addUserForm, #editUserForm').on('change', '[name="role"]', function() {
+            const form = $(this).closest('form');
+            toggleStudentFields(form, $(this).val() === 'student');
+        });
 
-    $('#saveUser').on('click', function() {
-        handleFormSubmit('add', '#addUserForm');
-    });
+        // จัดการการบันทึกข้อมูล
+        $('#saveUser').on('click', () => handleFormSubmit('add', '#addUserForm'));
+        $('#updateUser').on('click', () => handleFormSubmit('update', '#editUserForm'));
 
-    $('#updateUser').on('click', function() {
-        handleFormSubmit('update', '#editUserForm');
-    });
+        // จัดการปุ่มแก้ไขและลบ
+        $(document).on('click', '.edit-user', function(e) {
+            e.preventDefault();
+            loadUserData($(this).data('id'));
+        });
 
-    $(document).on('click', '.edit-user', function() {
-        const id = $(this).data('id');
-        loadUserData(id);
-    });
+        $(document).on('click', '.delete-user', function(e) {
+            e.preventDefault();
+            confirmDelete($(this).data('id'));
+        });
+    }
 
-    $(document).on('click', '.delete-user', function() {
-        const id = $(this).data('id');
-        confirmDelete(id);
-    });
+    // Utility Functions
+    function showAlert(icon, text) {
+        Swal.fire({
+            icon,
+            text,
+            showConfirmButton: icon === 'error',
+            timer: icon === 'success' ? 1500 : undefined
+        });
+    }
 
-    // Form Functions
     function toggleStudentFields(form, show) {
         const studentFields = form.find('[name="student_id"], [name="grade_level"], [name="classroom"]')
             .closest('.mb-3');
         
-        if (show) {
-            studentFields.show();
-            form.find('[name="student_id"]').prop('required', true);
-        } else {
-            studentFields.hide();
-            form.find('[name="student_id"]').prop('required', false);
+        studentFields.toggle(show);
+        form.find('[name="student_id"]').prop('required', show);
+        if (!show) {
             studentFields.find('input, select').val('');
         }
     }
 
+    // เพิ่มฟังก์ชัน populateForm ในส่วน Utility Functions
+    function populateForm(formSelector, data) {
+        const form = $(formSelector);
+        
+        // วนลูปผ่านทุก property ใน data object
+        Object.keys(data).forEach(key => {
+            const input = form.find(`[name="${key}"]`);
+            if (input.length) {
+                if (input.is('select')) {
+                    // กรณีเป็น select element
+                    input.val(data[key]).trigger('change');
+                } else if (input.attr('type') === 'radio') {
+                    // กรณีเป็น radio button
+                    input.filter(`[value="${data[key]}"]`).prop('checked', true).trigger('change');
+                } else if (input.attr('type') === 'checkbox') {
+                    // กรณีเป็น checkbox
+                    input.prop('checked', data[key]).trigger('change');
+                } else {
+                    // กรณีเป็น input ทั่วไป
+                    input.val(data[key]);
+                }
+            }
+        });
+
+        // จัดการกับ fields พิเศษสำหรับนักเรียน
+        if (data.role === 'student') {
+            toggleStudentFields(form, true);
+        } else {
+            toggleStudentFields(form, false);
+        }
+
+        // ล้าง validation states
+        form.find('.is-invalid').removeClass('is-invalid');
+    }
+
+    // CRUD Operations
     function handleFormSubmit(action, formSelector) {
         const form = $(formSelector);
         if (!validateForm(form)) return;
@@ -326,172 +267,92 @@ $(document).ready(function() {
             data: formData,
             processData: false,
             contentType: false,
-            success: function(response) {
+            success: response => {
                 if (response.success) {
-                    $(formSelector.replace('Form', 'Modal')).modal('hide');
-                    form[0].reset();
-                    showSuccess(action === 'add' ? 'เพิ่มผู้ใช้เรียบร้อย' : 'แก้ไขข้อมูลเรียบร้อย');
+                    const modalElement = form.closest('.modal')[0];
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                        // รอให้ modal animation เสร็จก่อนรีเซ็ตฟอร์ม
+                        setTimeout(() => {
+                            form[0].reset();
+                            form.find('.is-invalid').removeClass('is-invalid');
+                        }, 300);
+                    }
+                    showAlert('success', 
+                        action === 'add' ? 'เพิ่มผู้ใช้เรียบร้อย' : 'แก้ไขข้อมูลเรียบร้อย'
+                    );
                     usersTable.ajax.reload();
                 } else {
-                    handleError(response.message);
+                    showAlert('error', response.message);
                 }
             },
-            error: function(xhr, status, error) {
+            error: (xhr, status, error) => {
                 console.error('Form submit error:', error);
-                handleError('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                showAlert('error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
             }
         });
     }
 
-    function validateForm(form) {
-        form.find('.is-invalid').removeClass('is-invalid');
-        const role = form.find('[name="role"]').val();
-        let isValid = true;
-
-        // Required fields validation
-        const requiredFields = ['first_name', 'last_name', 'email'];
-        if (role === 'student') {
-            requiredFields.push('student_id', 'grade_level', 'classroom');
-        }
-
-        requiredFields.forEach(field => {
-            const input = form.find(`[name="${field}"]`);
-            if (!input.val()) {
-                input.addClass('is-invalid');
-                isValid = false;
-            }
-        });
-
-        if (!isValid) {
-            handleError('กรุณากรอกข้อมูลให้ครบถ้วน');
-            return false;
-        }
-
-        // Email validation
-        const email = form.find('[name="email"]').val();
-        if (!isValidEmail(email)) {
-            form.find('[name="email"]').addClass('is-invalid');
-            handleError('รูปแบบอีเมลไม่ถูกต้อง');
-            return false;
-        }
-
-        // Student ID validation
-        if (role === 'student') {
-            const studentId = form.find('[name="student_id"]').val();
-            if (!/^\d{5}$/.test(studentId)) {
-                form.find('[name="student_id"]').addClass('is-invalid');
-                handleError('รหัสนักเรียนต้องเป็นตัวเลข 5 หลัก');
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    function isValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
-    // CRUD Operations
     function loadUserData(id) {
-        if (isLoading || isProcessing) return;
+        if (isLoading) return;
         isLoading = true;
 
-        $.get('../../system/manageUsers.php', { 
-            action: 'get', 
-            id: id 
-        })
-        .done(function(response) {
-            if (response.success) {
-                populateForm('#editUserForm', response.user);
-                const editModal = document.querySelector('#editUserModal');
-                if (editModal && modalInstance) {
-                    modalInstance.show();
+        $.get('../../system/manageUsers.php', { action: 'get', id })
+            .done(response => {
+                if (response.success) {
+                    const modal = modalInstances.get('#editUserModal');
+                    if (modal) {
+                        populateForm('#editUserForm', response.user);
+                        modal.show();
+                    }
+                } else {
+                    showAlert('error', response.message);
                 }
-            } else {
-                handleError(response.message);
-            }
-        })
-        .fail(function(xhr, status, error) {
-            console.error('Load user error:', error);
-            handleError('ไม่สามารถโหลดข้อมูลผู้ใช้ได้');
-        })
-        .always(function() {
-            isLoading = false;
-        });
-    }
-
-    function populateForm(formSelector, data) {
-        const form = $(formSelector);
-        Object.keys(data).forEach(key => {
-            form.find(`[name="${key}"]`).val(data[key]);
-        });
-        toggleStudentFields(form, data.role === 'student');
-    }
-
-    function confirmDelete(id) {
-        Swal.fire({
-            title: 'ยืนยันการลบ',
-            text: 'คุณต้องการลบผู้ใช้นี้ใช่หรือไม่?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'ลบ',
-            cancelButtonText: 'ยกเลิก',
-            confirmButtonColor: '#dc3545'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                deleteUser(id);
-            }
-        });
+            })
+            .fail((xhr, status, error) => {
+                console.error('Load user error:', error);
+                showAlert('error', 'ไม่สามารถโหลดข้อมูลผู้ใช้ได้');
+            })
+            .always(() => isLoading = false);
     }
 
     function deleteUser(id) {
-        $.post('../../system/manageUsers.php', {
-            action: 'delete',
-            id: id
-        })
-        .done(function(response) {
-            if (response.success) {
-                showSuccess('ลบผู้ใช้เรียบร้อยแล้ว');
-                usersTable.ajax.reload();
-            } else {
-                handleError(response.message);
-            }
-        })
-        .fail(function(xhr, status, error) {
-            console.error('Delete user error:', error);
-            handleError('ไม่สามารถลบผู้ใช้ได้');
-        });
+        $.post('../../system/manageUsers.php', { action: 'delete', id })
+            .done(response => {
+                if (response.success) {
+                    showAlert('success', 'ลบผู้ใช้เรียบร้อยแล้ว');
+                    usersTable.ajax.reload();
+                } else {
+                    showAlert('error', response.message);
+                }
+            })
+            .fail((xhr, status, error) => {
+                console.error('Delete user error:', error);
+                showAlert('error', 'ไม่สามารถลบผู้ใช้ได้');
+            });
     }
 
-    // Utility Functions
-    function handleError(message) {
-        Swal.fire('ผิดพลาด', message, 'error');
-    }
-
-    function showSuccess(message) {
-        Swal.fire({
-            icon: 'success',
-            title: 'สำเร็จ',
-            text: message,
-            showConfirmButton: false,
-            timer: 1500
-        });
-    }
-
-    // เพิ่ม CSS สำหรับป้องกัน modal ซ้อนทับ
-    $('<style>')
-        .prop('type', 'text/css')
-        .html(`
+    // เพิ่ม CSS สำหรับ modal
+    const modalStyle = `
+        <style>
             .modal {
-                z-index: 1050 !important;
+                overflow-y: auto !important;
             }
-            .modal-backdrop {
-                z-index: 1040 !important;
+            .modal-open {
+                overflow: auto !important;
+                padding-right: 0 !important;
             }
-            .modal-backdrop + .modal-backdrop {
-                display: none !important;
-            }
-        `)
-        .appendTo('head');
+        </style>
+    `;
+    $('head').append(modalStyle);
+
+    // Initialize when page loads
+    $(document).on('pageChanged', function(e, pageId) {
+        if (pageId === 'usersPage') {
+            setupModals();
+            setupEventHandlers();
+            setupDataTable();
+        }
+    });
 });
