@@ -1,20 +1,18 @@
 <div class="page" id="usersPage">
     <div class="container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="row align-items-center">
-                <div class="col-sm-6">
-                    <h3 class="page-title">จัดการข้อมูลผู้ใช้</h3>
+                <div class="col">
+                    <h1 class="page-title">จัดการผู้ใช้</h1>
                 </div>
-                <div class="col-sm-6 text-end">
+                <div class="col-auto">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                        <i class="fas fa-plus me-2"></i>เพิ่มผู้ใช้ใหม่
+                        <i class="fas fa-plus"></i> เพิ่มผู้ใช้
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Filters and Search -->
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row g-3">
@@ -55,24 +53,24 @@
             </div>
         </div>
 
-        <!-- Users Table -->
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover" id="usersTable">
+                    <table id="usersTable" class="table table-hover">
                         <thead>
                             <tr>
                                 <th>รหัสนักเรียน</th>
                                 <th>ชื่อ-นามสกุล</th>
+                                <th>อีเมล</th>
                                 <th>ระดับชั้น/ห้อง</th>
                                 <th>ประเภทผู้ใช้</th>
                                 <th>วันที่สร้าง</th>
-                                <th>วันที่อัปเดต</th>
-                                <th>การดำเนินการ</th>
+                                <th>วันที่แก้ไข</th>
+                                <th>จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- ข้อมูลจะถูกเพิ่มด้วย DataTables -->
+                            <!-- ข้อมูลจะถูกเพิ่มโดย DataTable -->
                         </tbody>
                     </table>
                 </div>
@@ -109,6 +107,10 @@
                         <div class="mb-3">
                             <label class="form-label">นามสกุล</label>
                             <input type="text" class="form-control" name="last_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">อีเมล</label>
+                            <input type="email" class="form-control" name="email" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">ระดับชั้น</label>
@@ -177,6 +179,10 @@
                         <div class="mb-3">
                             <label class="form-label">นามสกุล</label>
                             <input type="text" class="form-control" name="last_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">อีเมล</label>
+                            <input type="email" class="form-control" name="email" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">ระดับชั้น</label>
