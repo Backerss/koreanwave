@@ -98,7 +98,8 @@
               <span>แต่ละบทเรียนสามารถสร้างข้อสอบแต่ละประเภทได้เพียงครั้งเดียวเท่านั้น</span>
             </div>
 
-            <div id="examForm">
+            <!-- แก้ไขบรรทัดนี้ -->
+            <form id="examForm">
               <!-- ส่วนตั้งค่าข้อสอบ -->
               <div class="row g-3 mb-4">
                 <div class="col-md-6">
@@ -133,7 +134,7 @@
                   <i class="fas fa-save me-2"></i>บันทึกแบบทดสอบ
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>

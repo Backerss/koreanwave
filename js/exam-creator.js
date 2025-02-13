@@ -329,10 +329,24 @@ function showError(message) {
 
 // แก้ไขฟังก์ชัน resetForm
 function resetForm() {
-    $('#examForm')[0].reset();
+    // รีเซ็ตฟอร์มโดยใช้ native DOM element
+    document.getElementById('examForm').reset();
+    
+    // เคลียร์รายการคำถามทั้งหมด
     $('#questionList').empty();
-    updateQuestionCount(); // เพิ่มการอัพเดทจำนวนข้อ
+    
+    // รีเซ็ตค่า select กลับเป็นค่าเริ่มต้น
+    $('#examType, #lessonSelect').val('');
+    
+    // อัพเดทสถานะปุ่มและจำนวนข้อ
+    updateQuestionCount();
     validateExamForm();
+    
+    // รีเซ็ตตัวนับข้อ
+    window.questionCounter = 0;
+    
+    // ปิดการใช้งานปุ่มต่างๆ
+    $('#addQuestion, #saveExam').prop('disabled', true);
 }
 
 // เพิ่มฟังก์ชันสำหรับโหลดรายการข้อสอบ
