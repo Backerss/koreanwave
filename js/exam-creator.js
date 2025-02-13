@@ -378,8 +378,6 @@ function loadExamList(lessonId = '') {
 // ฟังก์ชันสำหรับดูรายละเอียดข้อสอบ
 function viewExam(examId) {
 
-  console.log('Viewing exam', examId);
-
   $.get('../../system/manageExams.php', {
     action: 'view',
     examId: examId
@@ -539,8 +537,6 @@ function editQuestion(questionId) {
   }, function (response) {
     if (response.success) {
       const question = response.question;
-
-      console.log(question);
 
       const formHtml = `
         <form id="editQuestionForm">
