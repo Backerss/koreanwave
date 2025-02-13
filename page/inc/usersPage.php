@@ -69,9 +69,7 @@
                                 <th>จัดการ</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- ข้อมูลจะถูกเพิ่มโดย DataTable -->
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>

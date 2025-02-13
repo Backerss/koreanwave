@@ -4,26 +4,47 @@ $(document).ready(function() {
     let isLoading = false;
     let pageInitialized = false;
     let initializeTimeout = null;
+    let clickTimeout = null;
+    const DEBOUNCE_DELAY = 500; // ระยะเวลาป้องกันการคลิกซ้ำ (ms)
 
-    // Initialize DataTable
+    // Add debounce function
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Initialize DataTable function
     function initializeDataTable() {
-        // ยกเลิก timeout ที่มีอยู่
-        if (initializeTimeout) {
-            clearTimeout(initializeTimeout);
+        // ตรวจสอบว่ามีตารางอยู่จริงหรือไม่
+        if (!$('#usersTable').length) {
+            console.error('Table element not found');
+            return;
         }
 
-        // ถ้ากำลังโหลดอยู่ให้ return
+        // ป้องกันการ initialize ซ้ำ
         if (isLoading) return;
         isLoading = true;
 
         try {
-            // ถ้ามี table อยู่แล้วให้ทำลายก่อน
+            // Cleanup existing DataTable
             if ($.fn.DataTable.isDataTable('#usersTable')) {
-                usersTable.destroy();
+                let existingTable = $('#usersTable').DataTable();
+                existingTable.clear().destroy();
                 $('#usersTable tbody').empty();
             }
 
+            // สร้าง DataTable ใหม่
             usersTable = $('#usersTable').DataTable({
+                processing: true,
+                serverSide: false,
+                responsive: true,
                 ajax: {
                     url: '../../system/manageUsers.php',
                     type: 'GET',
@@ -32,11 +53,6 @@ $(document).ready(function() {
                         isLoading = false;
                         pageInitialized = true;
                         return response.data || [];
-                    },
-                    error: function(xhr, error, thrown) {
-                        isLoading = false;
-                        console.error('DataTable error:', error);
-                        handleError('ไม่สามารถโหลดข้อมูลได้');
                     }
                 },
                 columns: [
@@ -109,57 +125,65 @@ $(document).ready(function() {
                     isLoading = false;
                 }
             });
-
         } catch (error) {
             console.error('Error initializing DataTable:', error);
-            handleError('ไม่สามารถสร้างตารางข้อมูลได้');
             isLoading = false;
+            pageInitialized = false;
         }
     }
 
-    // Clean up function
-    function cleanupDataTable() {
-        if (initializeTimeout) {
-            clearTimeout(initializeTimeout);
-        }
-        if (usersTable && $.fn.DataTable.isDataTable('#usersTable')) {
-            usersTable.destroy();
-            $('#usersTable tbody').empty();
-        }
-        pageInitialized = false;
-        isLoading = false;
-    }
-
-    // ปรับปรุงการจัดการ page navigation
+    // Page Navigation Handler
     $(document).on('pageChanged', function(e, pageId) {
         if (pageId === 'users') {
-            if (!pageInitialized && !isLoading) {
-                initializeTimeout = setTimeout(function() {
-                    if ($('#usersTable').length) {
-                        initializeDataTable();
-                    }
-                }, 300);
-            }
+            // รอให้ DOM พร้อมก่อน initialize
+            setTimeout(() => {
+                if ($('#usersTable').length) {
+                    initializeDataTable();
+                }
+            }, 300);
         } else {
-            cleanupDataTable();
+            // Cleanup when leaving page
+            if ($.fn.DataTable.isDataTable('#usersTable')) {
+                $('#usersTable').DataTable().destroy();
+                $('#usersTable tbody').empty();
+            }
+            pageInitialized = false;
+            isLoading = false;
         }
     });
 
-    // Initialize on first load
+    // Initialize on page load if we're on users page
     if ($('#usersPage').hasClass('active')) {
-        initializeTimeout = setTimeout(function() {
+        setTimeout(() => {
             if ($('#usersTable').length) {
                 initializeDataTable();
             }
         }, 300);
     }
 
-    // Clean up when leaving page
-    $('.sidebar-menu li').on('click', function() {
-        if ($(this).data('page') !== 'users') {
-            cleanupDataTable();
-        }
-    });
+    // Add loading indicator to CSS
+    $('<style>')
+        .prop('type', 'text/css')
+        .html(`
+            .navigation-disabled {
+                pointer-events: none;
+                opacity: 0.6;
+            }
+            .page-loading {
+                position: relative;
+            }
+            .page-loading:after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.8);
+                z-index: 1000;
+            }
+        `)
+        .appendTo('head');
 
     // Event Handlers
     $('#addUserForm, #editUserForm').on('change', '[name="role"]', function() {
