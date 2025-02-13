@@ -18,7 +18,8 @@ $progressQuery = $db->prepare("
         lp.completed,
         lp.pretest_done,
         lp.posttest_done,
-        COALESCE(MAX(er.score), 0) as best_score
+        MAX(er.correct_answers) as best_score,
+        MAX(er.total_questions) as total_questions
     FROM lessons l
     LEFT JOIN learning_progress lp ON l.id = lp.lesson_id AND lp.user_id = ?
     LEFT JOIN exams e ON l.id = e.lesson_id AND e.exam_type = 'posttest'
@@ -125,7 +126,10 @@ $averageScore = $averageScore ?: 0;
                                     <?php echo $lesson['completed'] ? 'เรียนจบแล้ว' : 'ยังไม่ได้เรียน'; ?>
                                 </span>
                                 <?php if ($lesson['best_score'] > 0): ?>
-                                    <span class="score">คะแนนสูงสุด: <?php echo number_format($lesson['best_score'], 2); ?>/100</span>
+                                    <span class="score">
+                                        คะแนนสูงสุด: <?php echo $lesson['best_score']; ?>/<?php echo $lesson['total_questions']; ?> ข้อ
+                                        (<?php echo number_format(($lesson['best_score'] / $lesson['total_questions']) * 100, 2); ?>%)
+                                    </span>
                                 <?php endif; ?>
                             </div>
                         </div>

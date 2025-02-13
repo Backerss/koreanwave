@@ -585,8 +585,8 @@ function submitExam($examId, $answers, $timeSpent) {
 
             // คำนวณคะแนนเป็นเปอร์เซ็นต์
             $score = ($correctAnswers / $totalQuestions) * 100;
-            
-            // แก้ไขคำสั่ง INSERT โดยไม่ต้องระบุ created_at
+
+            // บันทึกผลการสอบ
             $stmt = $db->prepare("
                 INSERT INTO exam_results (
                     exam_id,
@@ -611,52 +611,30 @@ function submitExam($examId, $answers, $timeSpent) {
 
             $resultId = $db->lastInsertId();
 
-            // Update learning progress based on exam type
-            if ($exam['exam_type'] === 'pretest') {
-                // ตรวจสอบว่ามีข้อมูลใน learning_progress หรือไม่
-                $checkStmt = $db->prepare("
-                    SELECT id 
-                    FROM learning_progress 
-                    WHERE user_id = ? AND lesson_id = ?
-                ");
-                $checkStmt->execute([$userId, $exam['lesson_id']]);
-                $existingProgress = $checkStmt->fetch();
-
-                if ($existingProgress) {
-                    // ถ้ามีข้อมูลอยู่แล้ว ให้อัพเดท pretest_done
-                    $stmt = $db->prepare("
-                        UPDATE learning_progress 
-                        SET pretest_done = 1 
-                        WHERE user_id = ? AND lesson_id = ?
-                    ");
-                    $stmt->execute([$userId, $exam['lesson_id']]);
-                } else {
-                    // ถ้ายังไม่มีข้อมูล ให้เพิ่มใหม่
-                    $stmt = $db->prepare("
-                        INSERT INTO learning_progress 
-                            (user_id, lesson_id, pretest_done, current_vocab_index) 
-                        VALUES (?, ?, 1, 0)
-                    ");
-                    $stmt->execute([$userId, $exam['lesson_id']]);
-                }
-
-            } elseif ($exam['exam_type'] === 'posttest') {
+            // ถ้าเป็น posttest ให้อัพเดทสถานะการเรียน
+            if ($exam['exam_type'] === 'posttest') {
                 $passed = $score >= 50;
+                
+                // ดึงคะแนนที่ดีที่สุดจาก exam_results
+                $stmt = $db->prepare("
+                    SELECT MAX(correct_answers) as best_score
+                    FROM exam_results
+                    WHERE exam_id = ? AND user_id = ?
+                ");
+                $stmt->execute([$examId, $userId]);
+                $bestResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                $bestScore = max($correctAnswers, $bestResult['best_score'] ?? 0);
+
+                // อัพเดทสถานะการเรียน
                 $stmt = $db->prepare("
                     UPDATE learning_progress SET 
                         posttest_done = 1,
-                        completed = :completed,
-                        best_score = CASE 
-                            WHEN best_score < :score OR best_score IS NULL 
-                            THEN :score 
-                            ELSE best_score 
-                        END
+                        completed = :completed
                     WHERE user_id = :user_id 
                     AND lesson_id = :lesson_id
                 ");
                 $stmt->execute([
                     'completed' => $passed ? 1 : 0,
-                    'score' => $score,
                     'user_id' => $userId,
                     'lesson_id' => $exam['lesson_id']
                 ]);
