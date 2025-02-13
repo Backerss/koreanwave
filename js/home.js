@@ -33,7 +33,6 @@ $(document).ready(function () {
 
             // ถ้าสคริปต์ถูกโหลดแล้ว ให้ return Promise ที่ resolve แล้ว
             if (scriptManager.loadedScripts.has(scriptPath)) {
-                console.log(`Script ${scriptPath} already loaded`);
                 return Promise.resolve();
             }
 
