@@ -3,9 +3,72 @@ $(document).ready(function() {
     let usersTable = null;
     let isLoading = false;
     let pageInitialized = false;
-    let initializeTimeout = null;
-    let clickTimeout = null;
-    const DEBOUNCE_DELAY = 500; // ระยะเวลาป้องกันการคลิกซ้ำ (ms)
+    let currentModal = null;  // เพิ่มตัวแปรเก็บ modal ปัจจุบัน
+
+    // ฟังก์ชันสำหรับ cleanup events และ modal
+    function cleanupModalEvents() {
+        // ลบ event handlers ทั้งหมดที่เกี่ยวกับ modal
+        $('#addUserModal, #editUserModal').off();
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        
+        // ซ่อน modal ที่อาจค้างอยู่
+        $('#addUserModal, #editUserModal').modal('hide');
+    }
+
+    // ปรับปรุง event handlers สำหรับ modal
+    function initializeModalHandlers() {
+        // Cleanup ก่อน bind events ใหม่
+        cleanupModalEvents();
+
+        // จัดการ events เมื่อ modal ถูกปิด
+        $('#addUserModal, #editUserModal').on('hidden.bs.modal', function() {
+            const $form = $(this).find('form');
+            $form[0].reset();
+            $form.find('.is-invalid').removeClass('is-invalid');
+            currentModal = null;
+        });
+
+        // จัดการ events เมื่อ modal เปิด
+        $('#addUserModal, #editUserModal').on('show.bs.modal', function() {
+            if (currentModal) {
+                currentModal.modal('hide');
+            }
+            currentModal = $(this);
+        });
+    }
+
+    // ปรับปรุง event handlers สำหรับปุ่มต่างๆ
+    function initializeButtonHandlers() {
+        // ลบ event handlers เดิม
+        $(document).off('click', '.edit-user, .delete-user');
+        $('#saveUser, #updateUser').off('click');
+
+        // Bind events ใหม่
+        $(document).on('click', '.edit-user', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = $(this).data('id');
+            loadUserData(id);
+        });
+
+        $(document).on('click', '.delete-user', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = $(this).data('id');
+            confirmDelete(id);
+        });
+
+        $('#saveUser').on('click', function(e) {
+            e.preventDefault();
+            handleFormSubmit('add', '#addUserForm');
+        });
+
+        $('#updateUser').on('click', function(e) {
+            e.preventDefault();
+            handleFormSubmit('update', '#editUserForm');
+        });
+    }
 
     // Add debounce function
     function debounce(func, wait) {
@@ -306,6 +369,9 @@ $(document).ready(function() {
 
     // CRUD Operations
     function loadUserData(id) {
+        if (isLoading) return;
+        isLoading = true;
+
         $.get('../../system/manageUsers.php', { 
             action: 'get', 
             id: id 
@@ -321,6 +387,9 @@ $(document).ready(function() {
         .fail(function(xhr, status, error) {
             console.error('Load user error:', error);
             handleError('ไม่สามารถโหลดข้อมูลผู้ใช้ได้');
+        })
+        .always(function() {
+            isLoading = false;
         });
     }
 
@@ -381,4 +450,19 @@ $(document).ready(function() {
             timer: 1500
         });
     }
+
+    // เพิ่ม event handler สำหรับการเปลี่ยนหน้า
+    $(document).on('pageChanged', function(e, pageId) {
+        if (pageId === 'usersPage') {
+            initializeModalHandlers();
+            initializeButtonHandlers();
+            if ($('#usersTable').length) {
+                setTimeout(() => {
+                    initializeDataTable();
+                }, 300);
+            }
+        } else {
+            cleanupModalEvents();
+        }
+    });
 });
