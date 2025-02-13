@@ -108,48 +108,52 @@ $(document).ready(function () {
         // ปรับปรุงฟังก์ชัน navigateToPage
         function navigateToPage($element, targetPage) {
             try {
-                // Cleanup ก่อนเปลี่ยนหน้า
+                localStorage.setItem('currentPage', targetPage);
+
                 if (scriptManager.currentPage) {
-                    // ทำความสะอาด DataTables ถ้ามี
                     if (scriptManager.currentPage === 'users' && $.fn.DataTable.isDataTable('#usersTable')) {
                         $('#usersTable').DataTable().destroy();
                     }
-                    
-                    // ยกเลิกการโหลดสคริปต์ของหน้าเดิม
                     unloadPageScript(scriptManager.currentPage);
                 }
 
+                // ลำดับการทำงานใหม่
                 $('.sidebar-menu li').removeClass('active');
                 $element.addClass('active');
                 $('#currentPage').text($element.find('span').text() || '');
-                $('.page').removeClass('active');
+
+                // ซ่อนหน้าเก่าก่อน
+                $('.page').fadeOut(300).removeClass('active');
 
                 const $targetPage = $(`#${targetPage}Page`);
-                $targetPage.addClass('active');
+                $targetPage.addClass('active').hide();
 
-                // แสดง loading
-                showPageLoadingAnimation($targetPage);
-
-                // อัพเดทหน้าปัจจุบัน
-                scriptManager.currentPage = targetPage;
-
-                // โหลดทรัพยากรของหน้า
-                Promise.all([
-                    loadPageScript(targetPage),
-                    loadPageStylesheet(targetPage)
-                ]).then(() => {
-                    $('.page-loading-overlay').fadeOut(300, function() {
-                        $(this).remove();
+                // แสดง loading และโหลดทรัพยากร
+                return showPageLoadingAnimation()
+                    .then(() => {
+                        return Promise.all([
+                            loadPageScript(targetPage),
+                            loadPageStylesheet(targetPage)
+                        ]);
+                    })
+                    .then(() => {
+                        // รอให้การ fade out ของหน้าเก่าเสร็จสมบูรณ์
+                        return new Promise(resolve => setTimeout(resolve, 300));
+                    })
+                    .then(() => {
+                        // แสดงหน้าใหม่
+                        $targetPage.fadeIn(300);
+                        scriptManager.currentPage = targetPage;
+                        $(document).trigger('pageChanged', [targetPage + 'Page']);
+                    })
+                    .catch(error => {
+                        console.error('Error loading page resources:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถโหลดทรัพยากรของหน้าได้'
+                        });
                     });
-                    $(document).trigger('pageChanged', [targetPage + 'Page']);
-                }).catch(error => {
-                    console.error('Error loading page resources:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'เกิดข้อผิดพลาด',
-                        text: 'ไม่สามารถโหลดทรัพยากรของหน้าได้'
-                    });
-                });
 
             } catch (err) {
                 console.error('Navigation error:', err);
@@ -161,32 +165,41 @@ $(document).ready(function () {
             }
         }
 
-        // Add loading animation function
-        function showPageLoadingAnimation($targetPage) {
+        // ปรับปรุงฟังก์ชัน showPageLoadingAnimation
+        function showPageLoadingAnimation() {
             const loadingOverlay = `
-                <div class="page-loading-overlay">
-                    <div class="loading-spinner"></div>
+                <div class="page-loading-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(255, 255, 255, 0.9);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;">
+                    <div class="loading-spinner">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">กำลังโหลด...</span>
+                        </div>
+                        <div class="mt-2 text-primary">กำลังโหลด...</div>
+                    </div>
                 </div>
             `;
             
-            $targetPage.append(loadingOverlay);
+            // เพิ่ม loading overlay
+            const $overlay = $(loadingOverlay).appendTo('body').hide();
+            $overlay.fadeIn(300);
             
-            // Remove loading overlay after resources are loaded
-            Promise.all([
-                // Wait for stylesheet to load
-                currentStylesheet ? new Promise(resolve => {
-                    currentStylesheet.onload = resolve;
-                }) : Promise.resolve(),
-                // Wait for script to load
-                currentScript ? new Promise(resolve => {
-                    currentScript.onload = resolve;
-                }) : Promise.resolve(),
-                // Minimum display time for loading animation
-                new Promise(resolve => setTimeout(resolve, 500))
-            ]).then(() => {
-                $('.page-loading-overlay').fadeOut(300, function() {
-                    $(this).remove();
-                });
+            // คืนค่า Promise
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    $overlay.fadeOut(300, function() {
+                        $(this).remove();
+                        resolve();
+                    });
+                }, 800); // ลดเวลา loading ลงเล็กน้อย
             });
         }
 
@@ -226,6 +239,18 @@ $(document).ready(function () {
         if (initialPage) {
             loadPageScript(initialPage);
             loadPageStylesheet(initialPage);
+        }
+
+        // โหลดหน้าที่บันทึกไว้หลังรีเฟรช
+        const savedPage = localStorage.getItem('currentPage');
+        if (savedPage) {
+            const $menuItem = $(`.sidebar-menu li[data-page="${savedPage}"]`);
+            if ($menuItem.length) {
+                // หน่วงเวลาเล็กน้อยเพื่อให้แน่ใจว่า DOM พร้อมใช้งาน
+                setTimeout(() => {
+                    navigateToPage($menuItem, savedPage);
+                }, 50);
+            }
         }
 
         // Notification Bell Click
@@ -274,6 +299,8 @@ $(document).ready(function () {
                     confirmButtonColor: '#dc3545'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // ล้างค่า localStorage ก่อนออกจากระบบ
+                        localStorage.removeItem('currentPage');
                         window.location.href = '../../system/logout.php';
                     }
                 });

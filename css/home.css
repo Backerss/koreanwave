@@ -343,7 +343,6 @@ body {
     to { opacity: 1; }
 }
 
-
 /* Course Progress Styles */
 .course-progress {
     display: flex;
@@ -399,9 +398,6 @@ body {
     color: #7f8c8d;
     font-size: 0.9rem;
 }
-
-
-
 
 .progress-footer {
     display: flex;
@@ -583,4 +579,26 @@ body {
 @keyframes shine {
     0% { left: -100%; }
     100% { left: 100%; }
+}
+
+.loading-spinner {
+    text-align: center;
+}
+
+.page-loading-overlay {
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+.spinner-border {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
