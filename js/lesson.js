@@ -12,8 +12,6 @@ window.vocabularyList = window.vocabularyList || [];
 window.audioPlayer = window.audioPlayer || null;
 
 function startLesson(lessonId) {
-    currentLessonId = lessonId;
-    checkExamStatus(lessonId);  // เพิ่มบรรทัดนี้
     $.ajax({
         url: '../../system/checkLearn.php',
         type: 'POST',
@@ -22,68 +20,98 @@ function startLesson(lessonId) {
             lessonId: lessonId
         },
         success: function (response) {
-            const result = JSON.parse(response);
-            if (result.success) {
-                if (!result.hasPretest) {
-                    // ดึง exam_id ของแบบทดสอบก่อนเรียน
-                    $.ajax({
-                        url: '../../system/manageExams.php',
-                        type: 'GET',
-                        data: {
-                            action: 'getExamByLessonAndType',
-                            lessonId: lessonId,
-                            examType: 'pretest'
-                        },
-                        success: function(examResponse) {
-                            if (examResponse.success && examResponse.exam) {
-                                Swal.fire({
-                                    title: 'แบบทดสอบก่อนเรียน',
-                                    text: 'คุณต้องทำแบบทดสอบก่อนเรียนก่อน',
-                                    icon: 'info',
-                                    showCancelButton: true,
-                                    confirmButtonText: 'ทำแบบทดสอบ',
-                                    cancelButtonText: 'ยกเลิก'
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        window.location.href = `../view/exam.php?exam_id=${examResponse.exam.id}`;
-                                    }
-                                });
-                            } else {
-                                Swal.fire('ผิดพลาด', 'ไม่พบแบบทดสอบก่อนเรียน', 'error');
-                            }
-                        }
-                    });
-                } else {
-                    // ถ้าทำแบบทดสอบแล้ว โหลดบทเรียน
+            try {
+                const result = typeof response === 'string' ? JSON.parse(response) : response;
+                if (result.success) {
                     loadLessonContent(lessonId);
-                    window.currentVocabIndex = result.currentVocabIndex;
+                    window.currentVocabIndex = result.currentVocabIndex || 0;
+                } else {
+                    showError('เกิดข้อผิดพลาด', result.message || 'ไม่สามารถโหลดบทเรียนได้');
+                    $('#attendancePage').show();
                 }
+            } catch (e) {
+                console.error('Error parsing check learn response:', e);
+                showError('เกิดข้อผิดพลาด', 'ไม่สามารถตรวจสอบสถานะบทเรียน');
+                $('#attendancePage').show();
             }
+        },
+        error: function(xhr, status, error) {
+            console.error('Ajax error:', error);
+            handleAjaxError();
+            $('#attendancePage').show();
         }
     });
 }
 
+// แก้ไขฟังก์ชัน loadLessonContent
 function loadLessonContent(lessonId) {
-    $.get('../../system/checkLearn.php', {
-        lesson_id: lessonId
-    }, function (response) {
-        if (response.success) {
-            const status = $(`[data-lesson-id="${lessonId}"] .exam-status`);
-            if (response.hasPretest && response.hasPosttest) {
-                status.html('<span class="badge bg-success">พร้อมเรียน</span>');
-            } else {
-                status.html('<span class="badge bg-warning">รอแบบทดสอบ</span>');
-            }
-        }
-    });
-
-    window.currentVocabIndex = 0;
-
+    // แสดง loading state
+    $('#lessonLoadingState').show();
+    $('#lessonContent').hide();
+    
+    // เก็บ lesson id ปัจจุบัน
+    window.currentLessonId = lessonId;
+    
+    // ตรวจสอบความก้าวหน้าจาก learning_progress ก่อน
     $.ajax({
-        url: '../../system/getLesson.php',
+        url: '../../system/checkLearn.php',
         type: 'GET',
-        data: { lessonId: lessonId },
-        success: handleLessonData,
+        data: { 
+            action: 'getProgress',
+            lesson_id: lessonId 
+        },
+        success: function(progressResponse) {
+            try {
+                const progress = JSON.parse(progressResponse);
+                if (progress.success) {
+                    // เก็บ index ปัจจุบัน
+                    window.currentVocabIndex = progress.currentVocabIndex || 0;
+                    
+                    // โหลดข้อมูลบทเรียน
+                    $.ajax({
+                        url: '../../system/getLesson.php',
+                        type: 'GET',
+                        data: { lessonId: lessonId },
+                        success: function(lessonResponse) {
+                            try {
+                                const data = typeof lessonResponse === 'string' ? 
+                                    JSON.parse(lessonResponse) : lessonResponse;
+                                
+                                if (data.success) {
+                                    window.vocabularyList = data.vocabulary;
+                                    
+                                    // อัพเดทเนื้อหาตาม currentVocabIndex
+                                    updateLessonPage(
+                                        data.lesson, 
+                                        data.vocabulary[window.currentVocabIndex], 
+                                        data.vocabulary.length
+                                    );
+                                    setupVocabNavigation(data.vocabulary.length);
+                                    
+                                    // ถ้าอยู่ที่คำศัพท์สุดท้าย ให้เปิดปุ่มถัดไป
+                                    if (window.currentVocabIndex === data.vocabulary.length - 1) {
+                                        $('.btn-next').prop('disabled', false);
+                                    }
+                                    
+                                    // ซ่อน loading แสดงเนื้อหา
+                                    $('#lessonLoadingState').hide();
+                                    $('#lessonContent').fadeIn();
+                                } else {
+                                    showError('ไม่พบข้อมูลบทเรียน', data.message);
+                                }
+                            } catch (e) {
+                                console.error('Error parsing lesson data:', e);
+                                showError('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลบทเรียน');
+                            }
+                        },
+                        error: handleAjaxError
+                    });
+                }
+            } catch (e) {
+                console.error('Error parsing progress data:', e);
+                showError('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลความก้าวหน้า');
+            }
+        },
         error: handleAjaxError
     });
 }
@@ -188,33 +216,60 @@ function setupVocabNavigation(totalVocab) {
 }
 
 function navigateVocab(direction, totalVocab) {
+    const previousIndex = window.currentVocabIndex;
+    
+    // อัพเดท current index ตามทิศทาง
     if (direction === 'prev' && window.currentVocabIndex > 0) {
         window.currentVocabIndex--;
     } else if (direction === 'next' && window.currentVocabIndex < totalVocab - 1) {
         window.currentVocabIndex++;
     }
 
-    // บันทึกความก้าวหน้า
-    $.ajax({
-        url: '../../system/checkLearn.php',
-        type: 'POST',
-        data: {
-            action: 'update',
-            lessonId: window.currentLessonId,
-            currentVocabIndex: window.currentVocabIndex
-        },
-        success: function (response) {
-            const result = JSON.parse(response);
-            if (!result.success) {
-                console.error(result.message);
-            } else {
-                updateLessonPage(null, window.vocabularyList[window.currentVocabIndex], totalVocab);
-                updateNavigationState();
-                // เพิ่มการเรียกใช้ฟังก์ชันตรวจสอบการเรียนจบ
-                checkLessonCompletion(window.currentVocabIndex, totalVocab);
+    // ถ้า index เปลี่ยน ให้บันทึกความก้าวหน้า
+    if (previousIndex !== window.currentVocabIndex) {
+
+        // บันทึกความก้าวหน้า
+        $.ajax({
+            url: '../../system/checkLearn.php',
+            type: 'POST',
+            data: {
+                action: 'update',
+                lessonId: window.currentLessonId,
+                currentVocabIndex: window.currentVocabIndex,
+                totalVocab: totalVocab
+            },
+            success: function (response) {
+                try {
+                    const result = JSON.parse(response);
+                    if (!result.success) {
+                        console.error('Failed to update progress:', result.message);
+                        showError('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกความก้าวหน้าได้');
+                    } else {
+
+                        // อัพเดทหน้าเรียนและสถานะการนำทาง
+                        const currentVocab = window.vocabularyList[window.currentVocabIndex];
+                        
+                        updateLessonPage(null, currentVocab, totalVocab);
+                        updateNavigationState();
+                        
+                        // เช็คว่าถึงคำศัพท์สุดท้ายหรือไม่
+                        if (window.currentVocabIndex === totalVocab - 1) {
+                            checkLessonCompletion(window.currentVocabIndex, totalVocab);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing response:', e);
+                    showError('เกิดข้อผิดพลาด', 'ไม่สามารถประมวลผลการตอบกลับ');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Ajax error:', {xhr, status, error});
+                showError('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์');
             }
-        }
-    });
+        });
+    } else {
+        console.log('Index did not change, no update needed');
+    }
 }
 
 function updateNavigationState() {
@@ -279,96 +334,64 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
 // เพิ่มฟังก์ชันตรวจสอบว่าเรียนครบทุกคำศัพท์หรือยัง
 function checkLessonCompletion(currentIndex, totalVocab) {
     if (currentIndex === totalVocab - 1) {
-        const $nextBtn = $('.btn-next');
-        $nextBtn.prop('disabled', false);
-        
-        $nextBtn.one('click', () => {
-            // ดึงข้อมูลแบบทดสอบหลังเรียน
-            $.ajax({
-                url: '../../system/manageExams.php',
-                type: 'GET',
-                data: {
-                    action: 'getExamByLessonAndType',
-                    lessonId: window.currentLessonId,
-                    examType: 'posttest'
-                },
-                success: function(response) {
-                    if (response.success && response.exam) {
-                        Swal.fire({
-                            title: 'เรียนจบบทเรียนแล้ว!',
-                            text: 'คุณต้องการทำแบบทดสอบหลังเรียนหรือไม่?',
-                            icon: 'success',
-                            showCancelButton: true,
-                            confirmButtonText: 'ทำแบบทดสอบ',
-                            cancelButtonText: 'เรียนซ้ำ'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                // ไปหน้าแบบทดสอบพร้อม exam_id
-                                window.location.href = `../view/exam.php?exam_id=${response.exam.id}`;
-                            } else {
-                                // Reset index เพื่อเริ่มเรียนใหม่
-                                window.currentVocabIndex = 0;
-                                updateLessonPage(null, window.vocabularyList[0], window.vocabularyList.length);
-                                updateNavigationState();
-                            }
-                        });
-                    } else {
-                        Swal.fire({
-                            title: 'เกิดข้อผิดพลาด',
-                            text: 'ไม่พบแบบทดสอบหลังเรียน กรุณาติดต่อผู้สอน',
-                            icon: 'error',
-                            confirmButtonText: 'ตกลง'
-                        });
+        // อัพเดทสถานะว่าเรียนจบแล้วในฐานข้อมูล
+        $.ajax({
+            url: '../../system/checkLearn.php',
+            type: 'POST',
+            data: {
+                action: 'markAsCompleted',
+                lessonId: window.currentLessonId
+            },
+            success: function(response) {
+                try {
+                    const result = JSON.parse(response);
+                    if (!result.success) {
+                        console.error('Failed to update completion status:', result.message);
                     }
-                },
-                error: function() {
-                    Swal.fire({
-                        title: 'เกิดข้อผิดพลาด',
-                        text: 'ไม่สามารถโหลดแบบทดสอบได้ กรุณาลองใหม่อีกครั้ง',
-                        icon: 'error',
-                        confirmButtonText: 'ตกลง'
-                    });
+                } catch (e) {
+                    console.error('Error parsing completion response:', e);
                 }
-            });
+            },
+            error: function(xhr, status, error) {
+                console.error('Ajax error:', error);
+            }
         });
+
+        // ปิดการใช้งานปุ่มถัดไป
+        $('.btn-next').prop('disabled', true);
     }
 }
 
 function checkLessonAccess(lessonId) {
+    // ซ่อนทุกหน้าก่อน
+    $('.page').hide();
+    
     $.get('../../system/checkLearn.php', {
         lesson_id: lessonId
     }, function (response) {
-
-        let res = JSON.parse(response);
-
-    
-        if (res.success) {
-            const userRole = res.userRole;
-
-            // อนุญาตให้ครูและแอดมินเข้าถึงได้เสมอ
-            if (userRole === 'teacher' || userRole === 'admin') {
-                startLesson(lessonId);
-                return;
-            }
-
-            // ตรวจสอบแบบทดสอบสำหรับนักเรียน
-            if (!res.hasPretest || !res.hasPosttest) {
+        let result = JSON.parse(response);
+        
+        if (result.success) {
+            if (!result.hasPretest || !result.hasPosttest) {
                 Swal.fire({
                     title: 'ไม่สามารถเข้าเรียนได้',
                     text: 'บทเรียนนี้ยังไม่มีแบบทดสอบครบถ้วน กรุณาติดต่อผู้สอน',
                     icon: 'warning',
                     confirmButtonText: 'ตกลง'
+                }).then(() => {
+                    // กลับไปหน้า attendance เมื่อมีข้อผิดพลาด
+                    $('#attendancePage').show();
                 });
             } else {
+                // แสดงหน้า lessonPage และเริ่มบทเรียน
+                $('#lessonPage').show();
                 startLesson(lessonId);
+                
+                // อัปเดต breadcrumb และ sidebar
+                $('#currentPage').text('บทเรียน');
+                $('.sidebar-menu li').removeClass('active');
+                $('.sidebar-menu li[data-page="lesson"]').addClass('active');
             }
-        } else {
-            Swal.fire({
-                title: 'เกิดข้อผิดพลาด',
-                text: res.message,
-                icon: 'error',
-                confirmButtonText: 'ตกลง'
-            });
         }
     });
 }
@@ -422,3 +445,27 @@ function checkExamStatus(lessonId) {
         }
     });
 }
+
+// เพิ่มฟังก์ชันใหม่สำหรับตรวจสอบการโหลดเนื้อหา
+function checkAndLoadLesson() {
+    // ตรวจสอบว่าอยู่ที่หน้าบทเรียนหรือไม่
+    if ($('#lessonPage').length > 0) {
+        // ตรวจสอบว่ามี current lesson id หรือไม่
+        if (window.currentLessonId) {
+            loadLessonContent(window.currentLessonId);
+        }
+    }
+}
+
+$(document).ready(function() {
+    // เช็คว่ามีการเปลี่ยนแปลง URL หรือไม่
+    $(window).on('hashchange', function() {
+        checkAndLoadLesson();
+    });
+
+    
+    // โหลดบทเรียนเมื่อเปิดหน้าครั้งแรก
+    if ($('#lessonPage').length > 0 && window.currentLessonId) {
+        loadLessonContent(window.currentLessonId);
+    }
+});

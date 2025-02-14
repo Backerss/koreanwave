@@ -1,6 +1,14 @@
 <div class="page" id="lessonPage">
     <div class="lesson-container">
-        <div class="row">
+        <!-- Lesson Loading State -->
+        <div id="lessonLoadingState" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">กำลังโหลด...</span>
+            </div>
+        </div>
+        
+        <!-- Lesson Content -->
+        <div id="lessonContent" style="display: none;">
             <!-- Lesson Header -->
             <div class="col-12 mb-4">
                 <div class="lesson-header-card">
@@ -32,7 +40,7 @@
                         <div class="col-md-7">
                             <div class="lesson-text-section">
                                 <div class="lesson-text-content">
-                                    <h4><!-- Korean word will be inserted here --></h4>
+                                    <h4 class="word-kr"><!-- Korean word will be inserted here --></h4>
                                     <p class="lesson-description">
                                         <!-- Word description will be inserted here -->
                                     </p>
@@ -54,94 +62,54 @@
                                             <!-- Examples will be inserted here -->
                                         </ul>
                                     </div>
-
-                                    <!-- Add this inside the lesson-image-section div -->
-                                    <div class="lesson-navigation mt-3">
-                                        <button class="btn btn-primary btn-prev" disabled>
-                                            <i class="fas fa-chevron-left"></i> ย้อนกลับ
-                                        </button>
-                                        <span class="vocab-counter mx-3">1/1</span>
-                                        <button class="btn btn-primary btn-next" disabled>
-                                            ถัดไป <i class="fas fa-chevron-right"></i>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- เพิ่มเงื่อนไขตรวจสอบบทบาท -->
-            <?php if (isset($_SESSION['user_data'])): ?>
-            <script>
-            const userRole = "<?php echo $_SESSION['user_data']['role']; ?>";
-            </script>
-            <?php endif; ?>
-
-            <!-- แก้ไขส่วนแสดงบทเรียน -->
-            <?php 
-            $lessons = []; // Initialize empty array
-            
-            foreach ($lessons as $lesson): ?>
-            <!-- เพิ่มส่วนแสดงสถานะแบบทดสอบในการ์ดบทเรียน -->
-            <div class="col-md-4 mb-4">
-                <div class="card lesson-card" data-lesson-id="<?php echo $lesson['id']; ?>">
-                    <img src="<?php echo htmlspecialchars($lesson['image_url'] ?? 'https://placehold.co/400x200'); ?>"
-                        class="card-img-top" alt="<?php echo htmlspecialchars($lesson['title']); ?>">
-                    <div class="card-body">
-                        <h5 class="card-title"><?php echo htmlspecialchars($lesson['title']); ?></h5>
-                        <p class="card-text"><?php echo htmlspecialchars($lesson['category']); ?></p>
-                        <div class="lesson-stats mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-muted vocab-count">
-                                    <i class="fas fa-list"></i> <?php echo $vocabCount; ?> คำศัพท์
-                                </span>
-                                <span class="exam-status">
-                                    <!-- สถานะแบบทดสอบจะถูกเติมด้วย JavaScript -->
-                                </span>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary w-100" onclick="checkLessonAccess(<?php echo $lesson['id']; ?>)">
-                            <i class="fas fa-play-circle"></i> เข้าเรียน
+                    
+                    <!-- Navigation Controls -->
+                    <div class="lesson-navigation mt-3">
+                        <button class="btn btn-primary btn-prev" disabled>
+                            <i class="fas fa-chevron-left"></i> ย้อนกลับ
+                        </button>
+                        <span class="vocab-counter mx-3">1/1</span>
+                        <button class="btn btn-primary btn-next" disabled>
+                            ถัดไป <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
                 </div>
             </div>
-            <?php endforeach; ?>
         </div>
-
-        <!-- เพิ่มส่วนแสดงสถานะการทำแบบทดสอบ -->
-        <div class="exam-status-section mt-4">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <div class="exam-status-card pretest">
-                        <div class="exam-icon">
-                            <i class="fas fa-file-alt"></i>
-                        </div>
-                        <div class="exam-info">
-                            <h5>แบบทดสอบก่อนเรียน</h5>
-                            <div class="exam-progress">
-                                <div class="status-indicator">
-                                    <i class="fas fa-circle-notch fa-spin d-none"></i>
-                                    <span class="status-text">กำลังตรวจสอบ...</span>
-                                </div>
+    <!-- เพิ่มส่วนแสดงสถานะการทำแบบทดสอบ -->
+    <div class="exam-status-section mt-4">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="exam-status-card pretest">
+                    <div class="exam-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="exam-info">
+                        <h5>แบบทดสอบก่อนเรียน</h5>
+                        <div class="exam-progress">
+                            <div class="status-indicator">
+                                <i class="fas fa-circle-notch fa-spin d-none"></i>
+                                <span class="status-text">กำลังตรวจสอบ...</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <div class="exam-status-card posttest">
-                        <div class="exam-icon">
-                            <i class="fas fa-graduation-cap"></i>
-                        </div>
-                        <div class="exam-info">
-                            <h5>แบบทดสอบหลังเรียน</h5>
-                            <div class="exam-progress">
-                                <div class="status-indicator">
-                                    <i class="fas fa-circle-notch fa-spin d-none"></i>
-                                    <span class="status-text">กำลังตรวจสอบ...</span>
-                                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="exam-status-card posttest">
+                    <div class="exam-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="exam-info">
+                        <h5>แบบทดสอบหลังเรียน</h5>
+                        <div class="exam-progress">
+                            <div class="status-indicator">
+                                <i class="fas fa-circle-notch fa-spin d-none"></i>
+                                <span class="status-text">กำลังตรวจสอบ...</span>
                             </div>
                         </div>
                     </div>
@@ -149,4 +117,5 @@
             </div>
         </div>
     </div>
+</div>
 </div>
