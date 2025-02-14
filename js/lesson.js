@@ -324,35 +324,82 @@ function checkLessonCompletion(currentIndex, totalVocab) {
 }
 
 function checkLessonAccess(lessonId) {
-    // ซ่อนทุกหน้าก่อน
     $('.page').hide();
     
-    $.get('../../system/checkLearn.php', {
-        lesson_id: lessonId
-    }, function (response) {
-        let result = JSON.parse(response);
-        
-        if (result.success) {
-            if (!result.hasPretest || !result.hasPosttest) {
-                Swal.fire({
-                    title: 'ไม่สามารถเข้าเรียนได้',
-                    text: 'บทเรียนนี้ยังไม่มีแบบทดสอบครบถ้วน กรุณาติดต่อผู้สอน',
-                    icon: 'warning',
-                    confirmButtonText: 'ตกลง'
-                }).then(() => {
-                    // กลับไปหน้า attendance เมื่อมีข้อผิดพลาด
+    // ตรวจสอบการมีอยู่ของแบบทดสอบจากตาราง exams
+    $.ajax({
+        url: '../../system/manageExams.php',
+        type: 'GET',
+        data: {
+            action: 'getExamByLessonAndType',
+            lessonId: lessonId,
+            examType: 'pretest'
+        },
+        success: function(examResponse) {
+            try {
+                const examResult = typeof examResponse === 'string' ? 
+                    JSON.parse(examResponse) : examResponse;
+            
+                if (!examResult.success || !examResult.exam) {
+                    Swal.fire({
+                        title: 'ไม่สามารถเข้าเรียนได้',
+                        text: 'บทเรียนนี้ยังไม่มีแบบทดสอบครบถ้วน',
+                        icon: 'warning',
+                        confirmButtonText: 'ตกลง'
+                    });
                     $('#attendancePage').show();
+                    return;
+                }
+
+                // ตรวจสอบสถานะการทำแบบทดสอบจาก learning_progress
+                $.ajax({
+                    url: '../../system/checkLearn.php',
+                    type: 'POST',
+                    data: {
+                        action: 'checkExams',
+                        lessonId: lessonId
+                    },
+                    success: function(response) {
+                        try {
+                            const result = typeof response === 'string' ? 
+                                JSON.parse(response) : response;
+                            
+                            if (!result.pretest_done) {
+                                if (examResult.exam && examResult.exam.id) {
+                                    window.location.href = `exam.php?exam_id=${examResult.exam.id}`;
+                                } else {
+                                    throw new Error('ไม่พบข้อมูล exam_id');
+                                }
+                            } else {
+                                $('#lessonPage').show();
+                                startLesson(lessonId);
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            $('#attendancePage').show();
+                            Swal.fire({
+                                title: 'เกิดข้อผิดพลาด',
+                                text: 'ไม่สามารถตรวจสอบสถานะแบบทดสอบได้',
+                                icon: 'error'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        $('#attendancePage').show();
+                        showError('ไม่สามารถตรวจสอบสถานะแบบทดสอบได้');
+                    }
                 });
-            } else {
-                // แสดงหน้า lessonPage และเริ่มบทเรียน
-                $('#lessonPage').show();
-                startLesson(lessonId);
-                
-                // อัปเดต breadcrumb และ sidebar
-                $('#currentPage').text('บทเรียน');
-                $('.sidebar-menu li').removeClass('active');
-                $('.sidebar-menu li[data-page="lesson"]').addClass('active');
+            } catch (error) {
+                console.error('Error parsing exam response:', error);
+                $('#attendancePage').show();
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูลแบบทดสอบ');
             }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', error);
+            $('#attendancePage').show();
+            showError('ไม่สามารถโหลดข้อมูลแบบทดสอบได้');
         }
     });
 }

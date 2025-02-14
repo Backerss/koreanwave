@@ -546,116 +546,75 @@ function loadExamQuestions($examId) {
 // Add this new function at the bottom of the file
 function submitExam($examId, $answers, $timeSpent) {
     global $db;
-    $userId = $_SESSION['user_data']['id'];
     
     try {
-        // Get exam details
+        $db->beginTransaction();
+        
+        // Get lesson_id and exam_type from exam
         $stmt = $db->prepare("
-            SELECT e.*, l.id as lesson_id 
-            FROM exams e 
-            JOIN lessons l ON e.lesson_id = l.id 
-            WHERE e.id = ?
+            SELECT lesson_id, exam_type 
+            FROM exams 
+            WHERE id = ?
         ");
         $stmt->execute([$examId]);
-        $exam = $stmt->fetch(PDO::FETCH_ASSOC);
+        $examInfo = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if (!$exam) {
-            throw new Exception('ไม่พบข้อสอบ');
+        if (!$examInfo) {
+            throw new Exception('ไม่พบข้อมูลการสอบ');
         }
 
-        $db->beginTransaction();
-
-        try {
-            // Calculate score
-            $answers = json_decode($answers, true);
-            $totalQuestions = count($answers);
-            $correctAnswers = 0;
-            
-            // ตรวจสอบคำตอบและนับจำนวนข้อที่ถูก
-            $stmt = $db->prepare("SELECT id, correct_answer FROM questions WHERE exam_id = ?");
-            $stmt->execute([$examId]);
-            $correctAnswersMap = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-            
-            foreach ($answers as $answer) {
-                if (isset($correctAnswersMap[$answer['question_id']]) && 
-                    $answer['answer'] === $correctAnswersMap[$answer['question_id']]) {
-                    $correctAnswers++;
-                }
-            }
-
-            // คำนวณคะแนนเป็นเปอร์เซ็นต์
-            $score = ($correctAnswers / $totalQuestions) * 100;
-
-            // บันทึกผลการสอบ
+        $lessonId = $examInfo['lesson_id'];
+        $examType = $examInfo['exam_type'];
+        
+        // Decode answers
+        $answersArray = json_decode($answers, true);
+        if (!$answersArray) {
+            throw new Exception('รูปแบบคำตอบไม่ถูกต้อง');
+        }
+        
+        // บันทึกผลการสอบ
+        $stmt = $db->prepare("
+            INSERT INTO exam_results (user_id, exam_id, score, time_spent)
+            VALUES (?, ?, ?, ?)
+        ");
+        
+        $stmt->execute([
+            $_SESSION['user_data']['id'],
+            $examId,
+            calculateScore($examId, $answersArray),
+            $timeSpent
+        ]);
+        
+        $resultId = $db->lastInsertId();
+        
+        // อัพเดทสถานะการทำแบบทดสอบใน learning_progress
+        if ($examType === 'pretest') {
             $stmt = $db->prepare("
-                INSERT INTO exam_results (
-                    exam_id,
-                    user_id,
-                    score,
-                    time_spent,
-                    correct_answers,
-                    total_questions,
-                    answers_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                UPDATE learning_progress 
+                SET pretest_done = 1 
+                WHERE user_id = ? AND lesson_id = ?
             ");
-            
-            $stmt->execute([
-                $examId,
-                $userId,
-                $score,
-                $timeSpent,
-                $correctAnswers,
-                $totalQuestions,
-                json_encode($answers)
-            ]);
-
-            $resultId = $db->lastInsertId();
-
-            // ถ้าเป็น posttest ให้อัพเดทสถานะการเรียน
-            if ($exam['exam_type'] === 'posttest') {
-                $passed = $score >= 50;
-                
-                // ดึงคะแนนที่ดีที่สุดจาก exam_results
-                $stmt = $db->prepare("
-                    SELECT MAX(correct_answers) as best_score
-                    FROM exam_results
-                    WHERE exam_id = ? AND user_id = ?
-                ");
-                $stmt->execute([$examId, $userId]);
-                $bestResult = $stmt->fetch(PDO::FETCH_ASSOC);
-                $bestScore = max($correctAnswers, $bestResult['best_score'] ?? 0);
-
-                // อัพเดทสถานะการเรียน
-                $stmt = $db->prepare("
-                    UPDATE learning_progress SET 
-                        posttest_done = 1,
-                        completed = :completed
-                    WHERE user_id = :user_id 
-                    AND lesson_id = :lesson_id
-                ");
-                $stmt->execute([
-                    'completed' => $passed ? 1 : 0,
-                    'user_id' => $userId,
-                    'lesson_id' => $exam['lesson_id']
-                ]);
-            }
-
-            $db->commit();
-
-            echo json_encode([
-                'success' => true,
-                'score' => $score,
-                'correctAnswers' => $correctAnswers,
-                'totalQuestions' => $totalQuestions,
-                'redirect_url' => "../view/result.php?result_id=" . $resultId
-            ]);
-
-        } catch (Exception $e) {
-            $db->rollBack();
-            throw $e;
+        } else {
+            $stmt = $db->prepare("
+                UPDATE learning_progress 
+                SET posttest_done = 1 
+                WHERE user_id = ? AND lesson_id = ?
+            ");
         }
-
+        
+        $stmt->execute([$_SESSION['user_data']['id'], $lessonId]);
+        
+        $db->commit();
+        
+        echo json_encode([
+            'success' => true,
+            'redirect_url' => "../view/result.php?result_id=" . $resultId
+        ]);
+        
     } catch (Exception $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         echo json_encode([
             'success' => false,
             'message' => $e->getMessage()
