@@ -1,11 +1,3 @@
-// ตรวจสอบว่าตัวแปรถูกประกาศแล้วหรือยัง
-if (typeof currentVocabIndex === 'undefined') {
-    let currentLessonId = 0;
-    let currentVocabIndex = 0;
-    let vocabularyList = [];
-    let audioPlayer;
-}
-
 // หรือใช้ window object เพื่อเก็บตัวแปร global
 window.currentVocabIndex = window.currentVocabIndex || 0;
 window.vocabularyList = window.vocabularyList || [];
@@ -88,6 +80,7 @@ function loadLessonContent(lessonId) {
                                     
                                     // อัพเดทสถานะการนำทาง
                                     updateNavigationState();
+                                    checkExamStatus(lessonId);
                                     
                                     // ซ่อน loading แสดงเนื้อหา
                                     $('#lessonLoadingState').hide();
@@ -120,24 +113,6 @@ function showLoadingScreen() {
         allowEscapeKey: false,
         focusConfirm: false
     });
-}
-
-function handleLessonData(response) {
-    try {
-        const data = typeof response === 'string' ? JSON.parse(response) : response;
-        if (data.success) {
-            window.vocabularyList = data.vocabulary;
-            updateLessonPage(data.lesson, data.vocabulary[0], data.vocabulary.length);
-            setupVocabNavigation(data.vocabulary.length);
-            $('.page').removeClass('active');
-            $('#lessonPage').addClass('active');
-            Swal.close();
-        } else {
-            showError('ไม่พบข้อมูลบทเรียน', data.message);
-        }
-    } catch (e) {
-        console.error(e);
-    }
 }
 
 function handleAjaxError() {
@@ -223,7 +198,6 @@ function navigateVocab(direction, totalVocab) {
 
     // บันทึกตำแหน่งปัจจุบันลงฐานข้อมูลทันที
     if (previousIndex !== window.currentVocabIndex) {
-        
         $.ajax({
             url: '../../system/checkLearn.php',
             type: 'POST',
@@ -240,12 +214,13 @@ function navigateVocab(direction, totalVocab) {
                         const currentVocab = window.vocabularyList[window.currentVocabIndex];
                         updateLessonPage(null, currentVocab, totalVocab);
                         updateNavigationState();
-                        
                         // อัพเดทแถบความก้าวหน้า
                         const progress = ((window.currentVocabIndex + 1) / totalVocab) * 100;
                         $('.progress-bar').css('width', `${progress}%`);
                         $('.progress-text').text(`ความคืบหน้า: ${Math.round(progress)}%`);
                         
+                        // เพิ่มการเช็คว่าถึงคำศัพท์สุดท้ายหรือยัง
+                        checkExamStatus(window.currentLessonId);
                     }
                 } catch (e) {
                     console.error('Error parsing response:', e);
@@ -262,7 +237,6 @@ function updateNavigationState() {
     const $prevBtn = $('.btn-prev');
     const $nextBtn = $('.btn-next');
     const totalVocab = window.vocabularyList.length;
-
     $prevBtn.prop('disabled', window.currentVocabIndex === 0);
     $nextBtn.prop('disabled', window.currentVocabIndex === totalVocab - 1);
     $('.vocab-counter').text(`${window.currentVocabIndex + 1}/${totalVocab}`);
@@ -270,7 +244,7 @@ function updateNavigationState() {
 
 function updateLessonPage(lesson, vocabulary, totalVocab) {
     if (lesson) {
-        $('.lesson-header-card h3').text(`บทที่ ${lesson.id}: ${lesson.title}`);
+        $('.lesson-header-card h3').text(`บทเรียนที่ ${lesson.id}: ${lesson.title}`);
     }
 
 
@@ -319,6 +293,7 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
 
 // เพิ่มฟังก์ชันตรวจสอบว่าเรียนครบทุกคำศัพท์หรือยัง
 function checkLessonCompletion(currentIndex, totalVocab) {
+    console.log(currentIndex, totalVocab);
     if (currentIndex === totalVocab - 1) {
         // อัพเดทสถานะว่าเรียนจบแล้วในฐานข้อมูล
         $.ajax({
@@ -403,23 +378,72 @@ function checkExamStatus(lessonId) {
                 } else {
                     pretestCard.addClass('not-started')
                         .find('.status-text')
-                        .html('<i class="fas fa-exclamation-circle text-warning"></i> ยังไม่ได้ทำแบบทดสอบ');
+                        .html('<i class="fas fa-times-circle text-danger"></i> ยังไม่ได้ทำแบบทดสอบ');
                 }
 
-                // อัพเดทสถานะแบบทดสอบหลังเรียน
-                const posttestCard = $('.exam-status-card.posttest'); 
+                // ส่วนของแบบทดสอบหลังเรียน
+                const posttestCard = $('.exam-status-card.posttest');
+                const examAction = posttestCard.find('.exam-action');
+                const examButton = posttestCard.find('.take-exam-btn');
+
                 if (result.posttest_done) {
                     posttestCard.addClass('completed')
                         .find('.status-text')
                         .html('<i class="fas fa-check-circle text-success"></i> ทำแบบทดสอบแล้ว');
+                    examAction.hide();
                 } else if (result.pretest_done) {
-                    posttestCard.addClass('in-progress')
-                        .find('.status-text')
-                        .html('<i class="fas fa-clock text-primary"></i> พร้อมทำแบบทดสอบ');
+                    const totalVocab = window.vocabularyList ? window.vocabularyList.length : 0;
+                    const isLastVocab = window.currentVocabIndex === totalVocab - 1;
+
+                    posttestCard.addClass('in-progress');
+                    examAction.show();
+                    
+                    if (isLastVocab) {
+                        // ดึง exam_id ของ posttest
+                        $.ajax({
+                            url: '../../system/manageExams.php',
+                            type: 'GET',
+                            data: {
+                                action: 'getExamByLessonAndType',
+                                lessonId: lessonId,
+                                examType: 'posttest'
+                            },
+                            success: function(examResponse) {
+                                try {
+                                    const examResult = typeof examResponse === 'string' ? 
+                                        JSON.parse(examResponse) : examResponse;
+                                    
+                                    if (examResult.success && examResult.exam) {
+                                        examButton
+                                            .prop('disabled', false)
+                                            .attr('data-exam-id', examResult.exam.id)
+                                            .off('click')
+                                            .on('click', function() {
+                                                const examId = $(this).attr('data-exam-id');
+                                                window.location.href = `exam.php?exam_id=${examId}`;
+                                            });
+                                        
+                                        posttestCard.find('.status-text')
+                                            .html('<i class="fas fa-check-circle text-success"></i> พร้อมทำแบบทดสอบ');
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing exam data:', e);
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Failed to get exam:', error);
+                            }
+                        });
+                    } else {
+                        posttestCard.find('.status-text')
+                            .html('<i class="fas fa-info-circle text-warning"></i> ต้องเรียนให้ครบก่อน');
+                        examButton.prop('disabled', true);
+                    }
                 } else {
                     posttestCard.addClass('not-started')
                         .find('.status-text')
                         .html('<i class="fas fa-lock text-muted"></i> ต้องทำแบบทดสอบก่อนเรียนก่อน');
+                    examAction.hide();
                 }
             } catch (error) {
                 console.error('Error parsing response:', error);

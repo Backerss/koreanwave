@@ -112,6 +112,12 @@
                                 <span class="status-text">กำลังตรวจสอบ...</span>
                             </div>
                         </div>
+                        <!-- เพิ่มส่วนปุ่มทำข้อสอบ -->
+                        <div class="exam-action mt-2" style="display: none;">
+                            <button class="btn btn-sm btn-primary take-exam-btn">
+                                <i class="fas fa-pencil-alt"></i> ทำแบบทดสอบ
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
