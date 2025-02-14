@@ -218,6 +218,50 @@ if ($action === 'markAsCompleted') {
     }
 }
 
+// เพิ่มเงื่อนไขสำหรับ savePosition
+if ($action === 'savePosition') {
+    try {
+        $currentVocabIndex = $_POST['currentVocabIndex'];
+        $lessonId = $_POST['lessonId'];
+        
+        // อัพเดทตำแหน่งปัจจุบันในฐานข้อมูล
+        $stmt = $db->prepare("
+            UPDATE learning_progress 
+            SET current_vocab_index = ?,
+                last_accessed = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND lesson_id = ?
+        ");
+        
+        $success = $stmt->execute([$currentVocabIndex, $userId, $lessonId]);
+        
+        if ($success) {
+            // ดึงข้อมูลล่าสุดเพื่อยืนยัน
+            $stmt = $db->prepare("
+                SELECT current_vocab_index 
+                FROM learning_progress 
+                WHERE user_id = ? AND lesson_id = ?
+            ");
+            $stmt->execute([$userId, $lessonId]);
+            $currentPosition = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'savedIndex' => (int)$currentPosition['current_vocab_index'],
+                'requestedIndex' => (int)$currentVocabIndex,
+                'synchronized' => (int)$currentPosition['current_vocab_index'] === (int)$currentVocabIndex
+            ]);
+        } else {
+            throw new Exception('Failed to update position');
+        }
+        
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'checkExams') {
     $lessonId = $_POST['lessonId'];
     $userId = $_SESSION['user_data']['id'];

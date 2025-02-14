@@ -63,8 +63,9 @@ function loadLessonContent(lessonId) {
         success: function(progressResponse) {
             try {
                 const progress = JSON.parse(progressResponse);
+                
                 if (progress.success) {
-                    // เก็บ index ปัจจุบัน
+                    // เก็บ index ปัจจุบันจากฐานข้อมูล
                     window.currentVocabIndex = progress.currentVocabIndex || 0;
                     
                     // โหลดข้อมูลบทเรียน
@@ -80,18 +81,13 @@ function loadLessonContent(lessonId) {
                                 if (data.success) {
                                     window.vocabularyList = data.vocabulary;
                                     
-                                    // อัพเดทเนื้อหาตาม currentVocabIndex
-                                    updateLessonPage(
-                                        data.lesson, 
-                                        data.vocabulary[window.currentVocabIndex], 
-                                        data.vocabulary.length
-                                    );
+                                    // อัพเดทเนื้อหาตาม currentVocabIndex ที่ได้จากฐานข้อมูล
+                                    const currentVocab = data.vocabulary[window.currentVocabIndex];
+                                    updateLessonPage(data.lesson, currentVocab, data.vocabulary.length);
                                     setupVocabNavigation(data.vocabulary.length);
                                     
-                                    // ถ้าอยู่ที่คำศัพท์สุดท้าย ให้เปิดปุ่มถัดไป
-                                    if (window.currentVocabIndex === data.vocabulary.length - 1) {
-                                        $('.btn-next').prop('disabled', false);
-                                    }
+                                    // อัพเดทสถานะการนำทาง
+                                    updateNavigationState();
                                     
                                     // ซ่อน loading แสดงเนื้อหา
                                     $('#lessonLoadingState').hide();
@@ -225,50 +221,40 @@ function navigateVocab(direction, totalVocab) {
         window.currentVocabIndex++;
     }
 
-    // ถ้า index เปลี่ยน ให้บันทึกความก้าวหน้า
+    // บันทึกตำแหน่งปัจจุบันลงฐานข้อมูลทันที
     if (previousIndex !== window.currentVocabIndex) {
-
-        // บันทึกความก้าวหน้า
+        
         $.ajax({
             url: '../../system/checkLearn.php',
             type: 'POST',
             data: {
-                action: 'update',
+                action: 'savePosition',
                 lessonId: window.currentLessonId,
-                currentVocabIndex: window.currentVocabIndex,
-                totalVocab: totalVocab
+                currentVocabIndex: window.currentVocabIndex
             },
-            success: function (response) {
+            success: function(response) {
                 try {
                     const result = JSON.parse(response);
-                    if (!result.success) {
-                        console.error('Failed to update progress:', result.message);
-                        showError('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกความก้าวหน้าได้');
-                    } else {
-
+                    if (result.success) {
                         // อัพเดทหน้าเรียนและสถานะการนำทาง
                         const currentVocab = window.vocabularyList[window.currentVocabIndex];
-                        
                         updateLessonPage(null, currentVocab, totalVocab);
                         updateNavigationState();
                         
-                        // เช็คว่าถึงคำศัพท์สุดท้ายหรือไม่
-                        if (window.currentVocabIndex === totalVocab - 1) {
-                            checkLessonCompletion(window.currentVocabIndex, totalVocab);
-                        }
+                        // อัพเดทแถบความก้าวหน้า
+                        const progress = ((window.currentVocabIndex + 1) / totalVocab) * 100;
+                        $('.progress-bar').css('width', `${progress}%`);
+                        $('.progress-text').text(`ความคืบหน้า: ${Math.round(progress)}%`);
+                        
                     }
                 } catch (e) {
                     console.error('Error parsing response:', e);
-                    showError('เกิดข้อผิดพลาด', 'ไม่สามารถประมวลผลการตอบกลับ');
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Ajax error:', {xhr, status, error});
-                showError('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์');
+                console.error('Failed to save position:', error);
             }
         });
-    } else {
-        console.log('Index did not change, no update needed');
     }
 }
 
