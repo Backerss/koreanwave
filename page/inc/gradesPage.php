@@ -55,7 +55,6 @@ $averageScore = $averageScore ?: 0;
     <div class="container-fluid">
         <div class="page-header mb-4">
             <h3 class="page-title">ผลการเรียน</h3>
-            <p class="text-muted">ภาคเรียนที่ <?php echo date('n'); ?>/<?php echo date('Y') + 543; ?></p>
         </div>
 
         <!-- ตารางแสดงผลการเรียน -->

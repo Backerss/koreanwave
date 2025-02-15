@@ -73,11 +73,8 @@ $systemStats = require 'system/getStats.php';
                         พร้อมด้วยบทเรียนมาตรฐานและการติดตามผลการเรียนรู้อย่างมีประสิทธิภาพ
                     </p>
                     <div class="hero-buttons animation-fadeInUp animation-delay-2">
-                        <a href="#features" class="btn btn-primary">
+                        <a href="page/objectives.php" class="btn btn-primary">
                             <i class="fas fa-info-circle me-2"></i>ดูรายละเอียด
-                        </a>
-                        <a href="page/auth/login.html" class="btn btn-outline-light">
-                            <i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ
                         </a>
                     </div>
                 </div>
