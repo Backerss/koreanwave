@@ -178,7 +178,7 @@ if (!isset($_SESSION['user_data'])) {
         <!-- Content Area -->
         <div class="content-area">
             <!-- Dashboard Page -->
-            <?php include('../inc/dashbordPage.php') ?>
+            <?php include('../inc/dashboardPage.php') ?>
 
             <!-- Other Pages (Hidden by default) -->
             <?php include('../inc/profilePage.php') ?>

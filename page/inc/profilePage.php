@@ -134,21 +134,25 @@ $progressPercentage = ($userData['lessons_accessed'] / max($userData['total_less
                                             <div class="form-group">
                                                 <label>ชื่อ</label>
                                                 <input type="text" class="form-control" name="first_name" 
-                                                       value="<?php echo htmlspecialchars($userData['first_name']); ?>" disabled>
+                                                       value="<?php echo htmlspecialchars($userData['first_name']); ?>" 
+                                                       <?php echo ($userData['role'] === 'student') ? 'disabled' : ''; ?>>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label>นามสกุล</label>
                                                 <input type="text" class="form-control" name="last_name" 
-                                                       value="<?php echo htmlspecialchars($userData['last_name']); ?>" disabled>
+                                                       value="<?php echo htmlspecialchars($userData['last_name']); ?>" 
+                                                       <?php echo ($userData['role'] === 'student') ? 'disabled' : ''; ?>>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label>อีเมล</label>
                                                 <input type="email" class="form-control" name="email" 
-                                                       value="<?php echo htmlspecialchars($userData['email']); ?>" required>
+                                                       value="<?php echo htmlspecialchars($userData['email']); ?>" 
+                                                       <?php echo ($userData['role'] === 'student') ? 'disabled' : ''; ?> 
+                                                       required>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -284,8 +288,18 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         try {
-            showLoading('กำลังบันทึกข้อมูล...');
+            const userRole = '<?php echo $userData['role']; ?>';
             const formData = new FormData(e.target);
+
+            // Role-based validation
+            if (userRole === 'student') {
+                // Remove first_name, last_name and email from formData if user is student
+                formData.delete('first_name');
+                formData.delete('last_name');
+                formData.delete('email');
+            }
+
+            showLoading('กำลังบันทึกข้อมูล...');
             formData.append('action', 'updatePersonalInfo');
 
             const response = await fetch('../../system/updateProfile.php', {
@@ -295,9 +309,17 @@ document.addEventListener('DOMContentLoaded', function() {
             await handleResponse(response);
 
             Swal.fire('สำเร็จ', 'บันทึกข้อมูลส่วนตัวเรียบร้อย', 'success');
-            // Refresh user info display
-            document.querySelector('.profile-name').textContent = 
-                `${formData.get('first_name')} ${formData.get('last_name')}`;
+            
+            // Only update display if user has permission
+            if (userRole !== 'student') {
+                document.querySelector('.profile-name').textContent = 
+                    `${formData.get('first_name')} ${formData.get('last_name')}`;
+                // Update email display if exists
+                const emailDisplay = document.querySelector('.info-item .fa-envelope').nextElementSibling;
+                if (emailDisplay) {
+                    emailDisplay.textContent = formData.get('email');
+                }
+            }
         } catch (error) {
             Swal.fire('ผิดพลาด', error.message, 'error');
         }

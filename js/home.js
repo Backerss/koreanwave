@@ -92,6 +92,7 @@ $(document).ready(function () {
                 'lesson': '../../css/lessonpage.css',
                 'exam': '../../css/exam.css',
                 'courses': '../../css/couresePage.css',
+                'dashboard': '../../css/dashbord.css'
             };
 
             // Load stylesheet if page has an associated CSS file

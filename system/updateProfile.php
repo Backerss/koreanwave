@@ -45,19 +45,42 @@ try {
             break;
 
         case 'updatePersonalInfo':
-            $stmt = $db->prepare("
-                UPDATE users 
-                SET email = ?, tel = ?, gender = ?, club = ?
-                WHERE id = ?
-            ");
-            $stmt->execute([
-                $_POST['email'],
-                $_POST['phone'],
-                $_POST['gender'],
-                $_POST['club'],
-                $userId
-            ]);
-            echo json_encode(['success' => true]);
+            // Get user role from session
+            $userRole = $_SESSION['user_data']['role'];
+            
+            if ($userRole === 'student') {
+                // For students, only allow updating gender and club
+                $sql = "UPDATE users SET gender = ?, club = ? WHERE id = ?";
+                $params = [
+                    $_POST['gender'],
+                    $_POST['club'],
+                    $userId
+                ];
+            } else {
+                // For teachers and admins, allow updating all fields
+                $sql = "UPDATE users SET 
+                    first_name = ?, 
+                    last_name = ?, 
+                    email = ?, 
+                    gender = ?, 
+                    club = ? 
+                    WHERE id = ?";
+                $params = [
+                    $_POST['first_name'],
+                    $_POST['last_name'],
+                    $_POST['email'],
+                    $_POST['gender'],
+                    $_POST['club'],
+                    $userId
+                ];
+            }
+
+            $stmt = $db->prepare($sql);
+            if ($stmt->execute($params)) {
+                echo json_encode(['success' => true]);
+            } else {
+                throw new Exception('ไม่สามารถบันทึกข้อมูลได้');
+            }
             break;
 
         case 'updatePassword':

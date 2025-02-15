@@ -61,7 +61,23 @@ $timeSpent = $hours > 0 ? "{$hours} ชั่วโมง {$minutes} นาท�
 
 <div class="page active" id="dashboardPage">
     <div class="row">
-        <!-- Quick Stats -->
+        <!-- Welcome Row -->
+        <div class="col-12 mb-4">
+            <div class="welcome-card">
+                <div class="d-flex align-items-center">
+                    <div class="welcome-avatar">
+                        <img src="https://placehold.co/400" 
+                             alt="Profile" class="rounded-circle">
+                    </div>
+                    <div class="welcome-text ms-3">
+                        <h4 class="text-white mb-1">ยินดีต้อนรับ, <?php echo htmlspecialchars($_SESSION['user_data']['name']); ?>!</h4>
+                        <p class="text-white-50 mb-0">มาเรียนรู้ภาษาเกาหลีกันต่อ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
         <div class="col-md-3">
             <div class="stat-card">
                 <div class="stat-icon bg-primary">
@@ -113,66 +129,64 @@ $timeSpent = $hours > 0 ? "{$hours} ชั่วโมง {$minutes} นาท�
             </div>
         </div>
 
-        <!-- Course Progress Section -->
+        <!-- Category Lessons -->
+        <?php foreach ($categorizedLessons as $category => $categoryLessons): ?>
         <div class="col-12 mt-4">
-            <?php foreach ($categorizedLessons as $category => $categoryLessons): ?>
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>
-                        <i class="fas fa-book-reader me-2"></i>
-                        <?php echo ucfirst($category); ?> - บทเรียนทั้งหมด
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas <?php 
+                            echo match($category) {
+                                'vegetables' => 'fa-carrot',
+                                'fruits' => 'fa-apple-alt',
+                                'meats' => 'fa-drumstick-bite',
+                                default => 'fa-book'
+                            };
+                        ?> me-2"></i>
+                        <?php echo ucfirst($category); ?>
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="course-progress">
-                        <?php foreach ($categoryLessons as $lesson): 
-                            $progress = $lesson['current_vocab_index'] / max($lesson['total_vocab'], 1) * 100;
-                            $statusClass = $lesson['completed'] ? 'bg-success' : ($progress >= 50 ? 'bg-primary' : 'bg-warning');
-                        ?>
-                        <div class="progress-item">
-                            <div class="progress-header">
-                                <div class="subject-info">
-                                    <div>
-                                        <h6 class="mb-0"><?php echo htmlspecialchars($lesson['title']); ?></h6>
-                                        <small class="text-muted">
-                                            คำศัพท์: <?php echo $lesson['total_vocab']; ?> คำ | 
-                                            เวลาเรียน: <?php echo floor($lesson['time_spent']/60); ?> นาที
-                                        </small>
-                                    </div>
-                                </div>
-                                <div class="progress-stats">
-                                    <span class="progress-percentage"><?php echo number_format($progress, 0); ?>%</span>
-                                    <span class="progress-fraction"><?php echo $lesson['current_vocab_index']; ?>/<?php echo $lesson['total_vocab']; ?> คำ</span>
-                                </div>
-                            </div>
-                            <div class="progress progress-lg">
-                                <div class="progress-bar <?php echo $statusClass; ?>"
-                                     role="progressbar" 
-                                     style="width: <?php echo $progress; ?>%" 
-                                     aria-valuenow="<?php echo $progress; ?>" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
-                                </div>
-                            </div>
-                            <div class="progress-footer">
-                                <div>
-                                    <span class="badge <?php echo $lesson['pretest_done'] ? 'bg-success' : 'bg-secondary'; ?>">
-                                        แบบทดสอบก่อนเรียน
-                                    </span>
-                                    <span class="badge <?php echo $lesson['posttest_done'] ? 'bg-success' : 'bg-secondary'; ?>">
-                                        แบบทดสอบหลังเรียน
-                                    </span>
-                                </div>
-                                <?php if ($lesson['best_score'] > 0): ?>
-                                    <span class="text-success">คะแนนสูงสุด: <?php echo $lesson['best_score']; ?>%</span>
-                                <?php endif; ?>
+                    <?php foreach ($categoryLessons as $lesson): 
+                        $progress = $lesson['current_vocab_index'] / max($lesson['total_vocab'], 1) * 100;
+                    ?>
+                    <div class="lesson-progress-card mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0"><?php echo htmlspecialchars($lesson['title']); ?></h6>
+                            <span class="badge bg-<?php echo $lesson['completed'] ? 'success' : 'primary'; ?>">
+                                <?php echo number_format($progress, 0); ?>%
+                            </span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-<?php echo $lesson['completed'] ? 'success' : 'primary'; ?>"
+                                 role="progressbar" 
+                                 style="width: <?php echo $progress; ?>%"
+                                 aria-valuenow="<?php echo $progress; ?>" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
                             </div>
                         </div>
-                        <?php endforeach; ?>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div class="lesson-stats">
+                                <small class="text-muted">
+                                    <i class="fas fa-book me-1"></i><?php echo $lesson['total_vocab']; ?> คำ
+                                    <i class="fas fa-clock ms-2 me-1"></i><?php echo floor($lesson['time_spent']/60); ?> นาที
+                                </small>
+                            </div>
+                            <div class="lesson-badges">
+                                <span class="badge bg-<?php echo $lesson['pretest_done'] ? 'success' : 'secondary'; ?> me-1">
+                                    <i class="fas fa-check-circle me-1"></i>Pre-test
+                                </span>
+                                <span class="badge bg-<?php echo $lesson['posttest_done'] ? 'success' : 'secondary'; ?>">
+                                    <i class="fas fa-check-circle me-1"></i>Post-test
+                                </span>
+                            </div>
+                        </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
-            <?php endforeach; ?>
         </div>
+        <?php endforeach; ?>
     </div>
 </div>
