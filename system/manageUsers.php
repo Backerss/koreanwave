@@ -77,8 +77,9 @@ try {
                             $sql = "INSERT INTO users (
                                 student_id, first_name, last_name, 
                                 grade_level, classroom, role,
-                                email, password_hash, created_at, updated_at
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+                                email, password_hash, gender, club,
+                                created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
                             $stmt = $db->prepare($sql);
                             $success = $stmt->execute([
@@ -89,7 +90,9 @@ try {
                                 $_POST['role'] === 'student' ? $_POST['classroom'] : null,
                                 $_POST['role'],
                                 $_POST['email'],
-                                password_hash($_POST['password'], PASSWORD_DEFAULT)
+                                password_hash($_POST['password'], PASSWORD_DEFAULT),
+                                $_POST['gender'],
+                                $_POST['club']
                             ]);
 
                             if ($success) {
@@ -119,14 +122,14 @@ try {
                     $sql = "UPDATE users SET 
                         student_id = ?, first_name = ?, last_name = ?,
                         grade_level = ?, classroom = ?, role = ?,
-                        email = ?, updated_at = NOW()
+                        email = ?, gender = ?, club = ?, updated_at = NOW()
                         WHERE id = ?";
 
                     if (!empty($_POST['password'])) {
                         $sql = "UPDATE users SET 
                             student_id = ?, first_name = ?, last_name = ?,
                             grade_level = ?, classroom = ?, role = ?,
-                            email = ?, password_hash = ?, updated_at = NOW()
+                            email = ?, password_hash = ?, gender = ?, club = ?, updated_at = NOW()
                             WHERE id = ?";
                     }
 
@@ -137,7 +140,9 @@ try {
                         $_POST['grade_level'] ?: null,
                         $_POST['classroom'] ?: null,
                         $_POST['role'],
-                        $_POST['email']
+                        $_POST['email'],
+                        $_POST['gender'],
+                        $_POST['club']
                     ];
 
                     if (!empty($_POST['password'])) {

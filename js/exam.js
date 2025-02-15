@@ -63,39 +63,48 @@ $(document).ready(function() {
     }
 
     function submitExam() {
-        if (!confirm()) return;
+        // แสดง SweetAlert2 เพื่อยืนยันการส่งคำตอบ
+        Swal.fire({
+            title: 'ยืนยันการส่งคำตอบ',
+            text: 'คุณแน่ใจหรือไม่ที่จะส่งคำตอบ?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'ส่งคำตอบ',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const answers = $('.question-item').map(function() {
+                    return {
+                        question_id: $(this).find('input[type="radio"]').attr('name').replace('q', ''),
+                        answer: $(this).find('input[type="radio"]:checked').val()
+                    };
+                }).get();
 
-        const answers = $('.question-item').map(function() {
-            return {
-                question_id: $(this).find('input[type="radio"]').attr('name').replace('q', ''),
-                answer: $(this).find('input[type="radio"]:checked').val()
-            };
-        }).get();
+                examSubmitted = true;
 
-        examSubmitted = true;
-
-        // ดึง lesson_id จาก URL ของข้อสอบ
-        $.ajax({
-            url: '../../system/manageExams.php',
-            method: 'POST',
-            dataType: 'json', // เพิ่ม dataType เป็น json
-            data: {
-                action: 'submitExam',
-                exam_id: examId,
-                answers: JSON.stringify(answers),
-                time_spent: EXAM_TIME - timeLeft
-            },
-            success: function(response) {
-                if (response.success) {
-                    window.location.href = response.redirect_url;
-                } else {
-                    Swal.fire('ผิดพลาด', response.message || 'ไม่สามารถส่งคำตอบได้', 'error');
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Submit error:', error);
-                console.error('Response:', xhr.responseText); // เพิ่ม log response text
-                Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
+                $.ajax({
+                    url: '../../system/manageExams.php',
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        action: 'submitExam',
+                        exam_id: examId,
+                        answers: JSON.stringify(answers),
+                        time_spent: EXAM_TIME - timeLeft
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            Swal.fire('ผิดพลาด', response.message || 'ไม่สามารถส่งคำตอบได้', 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Submit error:', error);
+                        console.error('Response:', xhr.responseText);
+                        Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
+                    }
+                });
             }
         });
     }

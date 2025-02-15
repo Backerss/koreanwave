@@ -66,6 +66,8 @@
                                 <th>ประเภทผู้ใช้</th>
                                 <th>วันที่สร้าง</th>
                                 <th>วันที่แก้ไข</th>
+                                <th>เพศ</th>
+                                <th>ชุมนุม</th>
                                 <th>จัดการ</th>
                             </tr>
                         </thead>
@@ -111,6 +113,14 @@
                             <input type="email" class="form-control" name="email" required>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">เพศ</label>
+                            <select class="form-select" name="gender" required>
+                                <option value="male">ชาย</option>
+                                <option value="female">หญิง</option>
+                                <option value="other">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">ระดับชั้น</label>
                             <select class="form-select" name="grade_level">
                                 <option value="">เลือกระดับชั้น</option>
@@ -131,6 +141,18 @@
                                 <option value="3">3</option>
                                 <option value="4">4</option>
                                 <option value="5">5</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ชุมนุม</label>
+                            <select class="form-select" name="club">
+                                <option value="">เลือกชุมนุม</option>
+                                <?php
+                                $clubQuery = $db->query("SELECT * FROM clubs ORDER BY name");
+                                while ($club = $clubQuery->fetch()) {
+                                    echo "<option value='{$club['name']}'>{$club['name']}</option>";
+                                }
+                                ?>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -183,6 +205,14 @@
                             <input type="email" class="form-control" name="email" required>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">เพศ</label>
+                            <select class="form-select" name="gender" required>
+                                <option value="male">ชาย</option>
+                                <option value="female">หญิง</option>
+                                <option value="other">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">ระดับชั้น</label>
                             <select class="form-select" name="grade_level">
                                 <option value="">เลือกระดับชั้น</option>
@@ -203,6 +233,18 @@
                                 <option value="3">3</option>
                                 <option value="4">4</option>
                                 <option value="5">5</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ชุมนุม</label>
+                            <select class="form-select" name="club">
+                                <option value="">เลือกชุมนุม</option>
+                                <?php
+                                $clubQuery = $db->query("SELECT * FROM clubs ORDER BY name");
+                                while ($club = $clubQuery->fetch()) {
+                                    echo "<option value='{$club['name']}'>{$club['name']}</option>";
+                                }
+                                ?>
                             </select>
                         </div>
                         <div class="mb-3">

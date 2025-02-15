@@ -93,13 +93,13 @@ if (!isset($_SESSION['user_data'])) {
                 <i class="fas fa-user"></i>
                 <span>ข้อมูลส่วนตัว</span>
             </li>
-            <li data-page="grades">
-                <i class="fas fa-chart-line"></i>
-                <span>ผลการเรียน</span>
-            </li>
             <li data-page="attendance">
                 <i class="fas fa-clipboard-check"></i>
                 <span>การเข้าเรียน</span>
+            </li>
+            <li data-page="grades">
+                <i class="fas fa-chart-line"></i>
+                <span>ผลการเรียน</span>
             </li>
 
             <?php if ($_SESSION['user_data']['role'] == 'teacher' || $_SESSION['user_data']['role'] == 'admin'): ?>

@@ -142,7 +142,7 @@
                             <span class="input-group-text">
                                 <i class="fas fa-user"></i>
                             </span>
-                            <input type="text" class="form-control" id="studentId" placeholder="รหัสนักเรียน" required>
+                            <input type="text" class="form-control" id="username" placeholder="รหัสนักเรียน / อีเมล" required>
                         </div>
 
                         <div class="input-group mb-3">
@@ -202,24 +202,28 @@
         $('#loginForm').submit(function (e) {
             e.preventDefault();
 
-            const studentId = $('#studentId').val();
+            const username = $('#username').val().trim();
             const password = $('#password').val();
 
-            if (studentId === '' || password === '') {
+            if (username === '' || password === '') {
                 Swal.fire({
                     icon: 'warning',
                     title: 'กรุณากรอกข้อมูลให้ครบถ้วน',
-                    text: 'กรุณากรอกรหัสนักเรียนและรหัสผ่าน',
+                    text: 'กรุณากรอกรหัสนักเรียน/อีเมล และรหัสผ่าน',
                     confirmButtonText: 'ตกลง'
                 });
                 return;
             }
 
-            else if (studentId.length !== 5) {
+            // ตรวจสอบรูปแบบการ login
+            const isStudentId = /^\d{5}$/.test(username);
+            const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username);
+
+            if (!isStudentId && !isEmail) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'รหัสนักเรียนไม่ถูกต้อง',
-                    text: 'กรุณากรอกรหัสนักเรียน 5 หลัก',
+                    title: 'รูปแบบไม่ถูกต้อง',
+                    text: 'กรุณากรอกรหัสนักเรียน 5 หลัก หรืออีเมลให้ถูกต้อง',
                     confirmButtonText: 'ตกลง'
                 });
                 return;
@@ -229,10 +233,10 @@
                 url: '../../system/checklogin.php',
                 type: 'POST',
                 data: {
-                    studentId: studentId,
-                    password: password
+                    username: username,
+                    password: password,
+                    loginType: isStudentId ? 'student' : 'email'
                 },
-
                 success: function (response) {
                     if (response === 'success') {
                         Swal.fire({
@@ -248,16 +252,12 @@
                         Swal.fire({
                             icon: 'error',
                             title: 'เข้าสู่ระบบไม่สำเร็จ',
-                            text: 'รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง',
+                            text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
                             confirmButtonText: 'ตกลง'
                         });
-
-                        console.log(response);
                     }
                 }
-               
-            })
-
+            });
         });
 
     </script>

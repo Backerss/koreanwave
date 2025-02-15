@@ -49,6 +49,18 @@ $(document).ready(function() {
                         data: 'updated_at',
                         render: data => new Date(data).toLocaleString('th-TH')
                     },
+                    { 
+                        data: 'gender',
+                        render: data => ({
+                            'male': 'ชาย',
+                            'female': 'หญิง',
+                            'other': 'อื่นๆ'
+                        })[data] || '-'
+                    },
+                    { 
+                        data: 'club',
+                        render: data => data || '-'
+                    },
                     {
                         data: null,
                         orderable: false,
@@ -256,7 +268,12 @@ $(document).ready(function() {
     // CRUD Operations
     function handleFormSubmit(action, formSelector) {
         const form = $(formSelector);
-        if (!validateForm(form)) return;
+        
+        // ใช้ HTML5 form validation
+        if (!form[0].checkValidity()) {
+            form[0].reportValidity();
+            return;
+        }
 
         const formData = new FormData(form[0]);
         formData.append('action', action);
@@ -273,7 +290,6 @@ $(document).ready(function() {
                     const modal = bootstrap.Modal.getInstance(modalElement);
                     if (modal) {
                         modal.hide();
-                        // รอให้ modal animation เสร็จก่อนรีเซ็ตฟอร์ม
                         setTimeout(() => {
                             form[0].reset();
                             form.find('.is-invalid').removeClass('is-invalid');

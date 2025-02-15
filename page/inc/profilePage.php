@@ -86,15 +86,22 @@ $progressPercentage = ($userData['lessons_accessed'] / max($userData['total_less
                     <div class="profile-info">
                         <div class="info-item">
                             <i class="fas fa-id-card"></i>
-                            <span>รหัสนักเรียน: <?php echo htmlspecialchars($userData['student_id']); ?></span>
+                            <span>รหัสนักเรียน: <?php echo htmlspecialchars($userData['student_id'] ?? '-'); ?></span>
                         </div>
                         <div class="info-item">
                             <i class="fas fa-envelope"></i>
-                            <span><?php echo htmlspecialchars($userData['email']); ?></span>
+                            <span><?php echo htmlspecialchars($userData['email'] ?? '-'); ?></span>
                         </div>
                         <div class="info-item">
-                            <i class="fas fa-phone"></i>
-                            <span><?php echo htmlspecialchars($userData['tel']); ?></span>
+                            <i class="fas fa-venus-mars"></i>
+                            <span>เพศ: <?php 
+                                $genders = ['male' => 'ชาย', 'female' => 'หญิง', 'other' => 'อื่นๆ'];
+                                echo $genders[$userData['gender'] ?? ''] ?? 'ไม่ระบุ'; 
+                            ?></span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-users"></i>
+                            <span>ชุมนุม: <?php echo htmlspecialchars($userData['club'] ?? 'ไม่ระบุ'); ?></span>
                         </div>
                     </div>
                 </div>
@@ -127,14 +134,14 @@ $progressPercentage = ($userData['lessons_accessed'] / max($userData['total_less
                                             <div class="form-group">
                                                 <label>ชื่อ</label>
                                                 <input type="text" class="form-control" name="first_name" 
-                                                       value="<?php echo htmlspecialchars($userData['first_name']); ?>" required>
+                                                       value="<?php echo htmlspecialchars($userData['first_name']); ?>" disabled>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label>นามสกุล</label>
                                                 <input type="text" class="form-control" name="last_name" 
-                                                       value="<?php echo htmlspecialchars($userData['last_name']); ?>" required>
+                                                       value="<?php echo htmlspecialchars($userData['last_name']); ?>" disabled>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -146,9 +153,27 @@ $progressPercentage = ($userData['lessons_accessed'] / max($userData['total_less
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label>เบอร์โทรศัพท์</label>
-                                                <input type="tel" class="form-control" name="phone" 
-                                                       value="<?php echo htmlspecialchars($userData['tel']); ?>">
+                                                <label>เพศ</label>
+                                                <select class="form-select" name="gender" required>
+                                                    <option value="male" <?php echo $userData['gender'] === 'male' ? 'selected' : ''; ?>>ชาย</option>
+                                                    <option value="female" <?php echo $userData['gender'] === 'female' ? 'selected' : ''; ?>>หญิง</option>
+                                                    <option value="other" <?php echo $userData['gender'] === 'other' ? 'selected' : ''; ?>>อื่นๆ</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>ชุมนุม</label>
+                                                <select class="form-select" name="club" required>
+                                                    <option value="">เลือกชุมนุม</option>
+                                                    <?php
+                                                    $clubQuery = $db->query("SELECT * FROM clubs ORDER BY name");
+                                                    while ($club = $clubQuery->fetch()) {
+                                                        $selected = $userData['club'] === $club['name'] ? 'selected' : '';
+                                                        echo "<option value='{$club['name']}' {$selected}>{$club['name']}</option>";
+                                                    }
+                                                    ?>
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="col-12">

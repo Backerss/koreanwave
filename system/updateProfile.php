@@ -47,14 +47,14 @@ try {
         case 'updatePersonalInfo':
             $stmt = $db->prepare("
                 UPDATE users 
-                SET first_name = ?, last_name = ?, email = ?, tel = ?
+                SET email = ?, tel = ?, gender = ?, club = ?
                 WHERE id = ?
             ");
             $stmt->execute([
-                $_POST['first_name'],
-                $_POST['last_name'],
                 $_POST['email'],
                 $_POST['phone'],
+                $_POST['gender'],
+                $_POST['club'],
                 $userId
             ]);
             echo json_encode(['success' => true]);
