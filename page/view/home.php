@@ -144,7 +144,17 @@ if (!isset($_SESSION['user_data'])) {
                     <div class="user-info">
                         <span class="user-name"><?php echo $_SESSION['user_data']['name']; ?></span>
 
-                        <span class='user-role'><?php echo $_SESSION['user_data']['role']; ?></span>
+                        <span class='user-role'>
+                            <?php 
+                            if($_SESSION['user_data']['role'] == 'student') {
+                                echo $_SESSION['user_data']['studentId'];
+                            } else if($_SESSION['user_data']['role'] == 'teacher') {
+                                echo 'ครู';
+                            } else if($_SESSION['user_data']['role'] == 'admin') {
+                                echo 'ผู้ดูแล';
+                            }
+                            ?>
+                        </span>
                     </div>
                     <div class="dropdown">
                         <button class="btn dropdown-toggle" data-bs-toggle="dropdown">

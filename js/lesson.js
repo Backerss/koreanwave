@@ -291,38 +291,6 @@ function updateLessonPage(lesson, vocabulary, totalVocab) {
     $('.progress-text').text(`ความคืบหน้า: ${Math.round(progress)}%`);
 }
 
-// เพิ่มฟังก์ชันตรวจสอบว่าเรียนครบทุกคำศัพท์หรือยัง
-function checkLessonCompletion(currentIndex, totalVocab) {
-    console.log(currentIndex, totalVocab);
-    if (currentIndex === totalVocab - 1) {
-        // อัพเดทสถานะว่าเรียนจบแล้วในฐานข้อมูล
-        $.ajax({
-            url: '../../system/checkLearn.php',
-            type: 'POST',
-            data: {
-                action: 'markAsCompleted',
-                lessonId: window.currentLessonId
-            },
-            success: function(response) {
-                try {
-                    const result = JSON.parse(response);
-                    if (!result.success) {
-                        console.error('Failed to update completion status:', result.message);
-                    }
-                } catch (e) {
-                    console.error('Error parsing completion response:', e);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Ajax error:', error);
-            }
-        });
-
-        // ปิดการใช้งานปุ่มถัดไป
-        $('.btn-next').prop('disabled', true);
-    }
-}
-
 function checkLessonAccess(lessonId) {
     $('.page').hide();
     

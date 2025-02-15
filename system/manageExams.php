@@ -571,38 +571,67 @@ function submitExam($examId, $answers, $timeSpent) {
         if (!$answersArray) {
             throw new Exception('รูปแบบคำตอบไม่ถูกต้อง');
         }
+
+        // ตรวจคำตอบและนับคะแนน
+        $stmt = $db->prepare("SELECT id, correct_answer FROM questions WHERE exam_id = ?");
+        $stmt->execute([$examId]);
+        $correctAnswers = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        
+        $totalQuestions = count($correctAnswers);
+        $correctCount = 0;
+
+        foreach ($answersArray as $answer) {
+            if (isset($correctAnswers[$answer['question_id']]) && 
+                $answer['answer'] === $correctAnswers[$answer['question_id']]) {
+                $correctCount++;
+            }
+        }
+
+        // คำนวณคะแนนเป็นเปอร์เซ็นต์
+        $score = ($correctCount / $totalQuestions) * 100;
         
         // บันทึกผลการสอบ
         $stmt = $db->prepare("
-            INSERT INTO exam_results (user_id, exam_id, score, time_spent)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO exam_results (
+                user_id, exam_id, score, time_spent, 
+                correct_answers, total_questions
+            ) VALUES (?, ?, ?, ?, ?, ?)
         ");
         
         $stmt->execute([
             $_SESSION['user_data']['id'],
             $examId,
-            calculateScore($examId, $answersArray),
-            $timeSpent
+            $score,
+            $timeSpent,
+            $correctCount,
+            $totalQuestions
         ]);
         
         $resultId = $db->lastInsertId();
-        
-        // อัพเดทสถานะการทำแบบทดสอบใน learning_progress
+
+        // อัพเดทสถานะการทำแบบทดสอบ
         if ($examType === 'pretest') {
             $stmt = $db->prepare("
                 UPDATE learning_progress 
                 SET pretest_done = 1 
                 WHERE user_id = ? AND lesson_id = ?
             ");
+            $stmt->execute([$_SESSION['user_data']['id'], $lessonId]);
         } else {
             $stmt = $db->prepare("
                 UPDATE learning_progress 
-                SET posttest_done = 1 
+                SET posttest_done = CASE 
+                    WHEN ? >= 50 THEN 1 
+                    ELSE 0 
+                END,
+                completed = CASE 
+                    WHEN ? >= 50 THEN 1 
+                    ELSE 0 
+                END
                 WHERE user_id = ? AND lesson_id = ?
             ");
+            $stmt->execute([$score, $score, $_SESSION['user_data']['id'], $lessonId]);
         }
-        
-        $stmt->execute([$_SESSION['user_data']['id'], $lessonId]);
         
         $db->commit();
         
