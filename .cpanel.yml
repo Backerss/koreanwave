@@ -1,5 +1,5 @@
----
 deployment:
   tasks:
     - export DEPLOYPATH=/home/p7052933/public_html
     - /bin/cp -r * $DEPLOYPATH/
+    - echo "Deployment completed successfully"
