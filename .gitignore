@@ -21,3 +21,4 @@
 *.midi
 
 /config/database.php
+/uploads

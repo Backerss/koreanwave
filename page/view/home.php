@@ -116,6 +116,10 @@ if (!isset($_SESSION['user_data'])) {
                 <i class="fas fa-tasks"></i>
                 <span>จัดการข้อสอบ</span>
             </li>
+            <li data-page="fallow">
+                <i class="fas fa-chart-bar"></i>
+                <span>ติดตามผล</span>
+            </li>
             <?php endif; ?>
 
 
@@ -208,6 +212,10 @@ if (!isset($_SESSION['user_data'])) {
             <!-- หน้าแสดงการสร้าง แก้ไข ลบ ข้อสอบ -->
             <?php include('../inc/examCreatorPage.php') ?>
             <!-- หน้าแสดงการสร้าง แก้ไข ลบ ข้อสอบ -->
+
+            <!-- หน้าติดตามผล -->
+            <?php include('../inc/fallowPage.php') ?>
+            <!-- หน้าติดตามผล -->
 
         </div>
 

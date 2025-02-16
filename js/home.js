@@ -14,7 +14,8 @@ $(document).ready(function () {
             'courses': '../../js/courese.js',
             'examCreator': '../../js/exam-creator.js',
             'attendance': '../../js/lesson.js',
-            'users': '../../js/userManagementPage.js'
+            'users': '../../js/userManagementPage.js',
+            'fallow': '../../js/fallowPage.js'
         }
     };
 
@@ -92,7 +93,8 @@ $(document).ready(function () {
                 'lesson': '../../css/lessonpage.css',
                 'exam': '../../css/exam.css',
                 'courses': '../../css/couresePage.css',
-                'dashboard': '../../css/dashbord.css'
+                'dashboard': '../../css/dashbord.css',
+                'fallow': '../../css/fallowPage.css'
             };
 
             // Load stylesheet if page has an associated CSS file
