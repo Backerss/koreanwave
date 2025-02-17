@@ -120,6 +120,10 @@ if (!isset($_SESSION['user_data'])) {
                 <i class="fas fa-chart-bar"></i>
                 <span>ติดตามผล</span>
             </li>
+            <li data-page="logs">
+                <i class="fas fa-history"></i>
+                <span>บันทึกการใช้งาน</span>
+            </li>
             <?php endif; ?>
 
 
@@ -216,6 +220,10 @@ if (!isset($_SESSION['user_data'])) {
             <!-- หน้าติดตามผล -->
             <?php include('../inc/fallowPage.php') ?>
             <!-- หน้าติดตามผล -->
+
+            <!-- หน้า logs -->
+            <?php include('../inc/logsPage.php') ?>   
+            <!-- หน้า logs -->
 
         </div>
 

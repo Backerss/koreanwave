@@ -15,7 +15,8 @@ $(document).ready(function () {
             'examCreator': '../../js/exam-creator.js',
             'attendance': '../../js/lesson.js',
             'users': '../../js/userManagementPage.js',
-            'fallow': '../../js/fallowPage.js'
+            'fallow': '../../js/fallowPage.js',
+            'logs': '../../js/logsPage.js',
         }
     };
 
@@ -94,7 +95,8 @@ $(document).ready(function () {
                 'exam': '../../css/exam.css',
                 'courses': '../../css/couresePage.css',
                 'dashboard': '../../css/dashbord.css',
-                'fallow': '../../css/fallowPage.css'
+                'fallow': '../../css/fallowPage.css',
+                'logs': '../../css/logsPage.css',
             };
 
             // Load stylesheet if page has an associated CSS file

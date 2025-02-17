@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db.php';
+require_once 'Logger.php';
 header('Content-Type: application/json');
 
 // Check if user is admin
@@ -96,6 +97,32 @@ try {
                             ]);
 
                             if ($success) {
+                                // สร้าง Logger instance
+                                $logger = new Logger($db, $_SESSION['user_data']['id']);
+                                
+                                // เก็บ log การเพิ่มผู้ใช้
+                                $newUserId = $db->lastInsertId();
+                                $logData = [
+                                    'student_id' => $_POST['student_id'] ?? null,
+                                    'first_name' => $_POST['first_name'],
+                                    'last_name' => $_POST['last_name'],
+                                    'role' => $_POST['role'],
+                                    'email' => $_POST['email'],
+                                    'gender' => $_POST['gender'],
+                                    'grade_level' => $_POST['grade_level'] ?? null,
+                                    'classroom' => $_POST['classroom'] ?? null,
+                                    'club' => $_POST['club']
+                                ];
+
+                                $logger->log(
+                                    'create',
+                                    'users',
+                                    "เพิ่มผู้ใช้ใหม่: {$_POST['first_name']} {$_POST['last_name']} (บทบาท: {$_POST['role']})",
+                                    $newUserId,
+                                    null,
+                                    $logData
+                                );
+
                                 $db->commit();
                                 echo json_encode(['success' => true]);
                             } else {
@@ -119,48 +146,116 @@ try {
                     break;
 
                 case 'update':
-                    $sql = "UPDATE users SET 
-                        student_id = ?, first_name = ?, last_name = ?,
-                        grade_level = ?, classroom = ?, role = ?,
-                        email = ?, gender = ?, club = ?, updated_at = NOW()
-                        WHERE id = ?";
+                    try {
+                        // ดึงข้อมูลเดิมก่อนอัพเดท
+                        $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+                        $stmt->execute([$_POST['id']]);
+                        $oldData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                    if (!empty($_POST['password'])) {
                         $sql = "UPDATE users SET 
                             student_id = ?, first_name = ?, last_name = ?,
                             grade_level = ?, classroom = ?, role = ?,
-                            email = ?, password_hash = ?, gender = ?, club = ?, updated_at = NOW()
+                            email = ?, gender = ?, club = ?, updated_at = NOW()
                             WHERE id = ?";
+
+                        $params = [
+                            $_POST['role'] === 'student' ? $_POST['student_id'] : null,
+                            $_POST['first_name'],
+                            $_POST['last_name'],
+                            $_POST['role'] === 'student' ? $_POST['grade_level'] : null,
+                            $_POST['role'] === 'student' ? $_POST['classroom'] : null,
+                            $_POST['role'],
+                            $_POST['email'],
+                            $_POST['gender'],
+                            $_POST['club'],
+                            $_POST['id']
+                        ];
+
+                        if (!empty($_POST['password'])) {
+                            $sql = "UPDATE users SET 
+                                student_id = ?, first_name = ?, last_name = ?,
+                                grade_level = ?, classroom = ?, role = ?,
+                                email = ?, password_hash = ?, gender = ?, club = ?, updated_at = NOW()
+                                WHERE id = ?";
+                            array_splice($params, 7, 0, password_hash($_POST['password'], PASSWORD_DEFAULT));
+                        }
+
+                        $stmt = $db->prepare($sql);
+                        $success = $stmt->execute($params);
+
+                        if ($success) {
+                            // สร้าง Logger instance
+                            $logger = new Logger($db, $_SESSION['user_data']['id']);
+
+                            // เตรียมข้อมูลใหม่สำหรับ log
+                            $newData = [
+                                'student_id' => $_POST['student_id'] ?? null,
+                                'first_name' => $_POST['first_name'],
+                                'last_name' => $_POST['last_name'],
+                                'role' => $_POST['role'],
+                                'email' => $_POST['email'],
+                                'gender' => $_POST['gender'],
+                                'grade_level' => $_POST['grade_level'] ?? null,
+                                'classroom' => $_POST['classroom'] ?? null,
+                                'club' => $_POST['club']
+                            ];
+
+                            // เก็บ log การแก้ไขผู้ใช้
+                            $logger->log(
+                                'update',
+                                'users',
+                                "แก้ไขข้อมูลผู้ใช้: {$_POST['first_name']} {$_POST['last_name']} (บทบาท: {$_POST['role']})",
+                                $_POST['id'],
+                                $oldData,
+                                $newData
+                            );
+
+                            echo json_encode(['success' => true]);
+                        } else {
+                            throw new Exception('ไม่สามารถอัพเดทข้อมูลได้');
+                        }
+                    } catch (Exception $e) {
+                        echo json_encode([
+                            'success' => false,
+                            'message' => $e->getMessage()
+                        ]);
                     }
-
-                    $params = [
-                        $_POST['student_id'] ?: null,
-                        $_POST['first_name'],
-                        $_POST['last_name'],
-                        $_POST['grade_level'] ?: null,
-                        $_POST['classroom'] ?: null,
-                        $_POST['role'],
-                        $_POST['email'],
-                        $_POST['gender'],
-                        $_POST['club']
-                    ];
-
-                    if (!empty($_POST['password'])) {
-                        $params[] = password_hash($_POST['password'], PASSWORD_DEFAULT);
-                    }
-
-                    $params[] = $_POST['id'];
-
-                    $stmt = $db->prepare($sql);
-                    $stmt->execute($params);
-
-                    echo json_encode(['success' => true]);
                     break;
 
                 case 'delete':
-                    $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
-                    $stmt->execute([$_POST['id']]);
-                    echo json_encode(['success' => true]);
+                    try {
+                        // ดึงข้อมูลผู้ใช้ก่อนลบ
+                        $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+                        $stmt->execute([$_POST['id']]);
+                        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                        $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
+                        $success = $stmt->execute([$_POST['id']]);
+
+                        if ($success) {
+                            // สร้าง Logger instance
+                            $logger = new Logger($db, $_SESSION['user_data']['id']);
+
+                            // เก็บ log การลบผู้ใช้
+                            $logger->log(
+                                'delete',
+                                'users',
+                                "ลบผู้ใช้: {$userData['first_name']} {$userData['last_name']} (บทบาท: {$userData['role']})",
+                                $_POST['id'],
+                                $userData,
+                                null
+                            );
+
+                            echo json_encode(['success' => true]);
+                        } else {
+                            throw new Exception('ไม่สามารถลบผู้ใช้ได้');
+                        }
+                    } catch (Exception $e) {
+                        echo json_encode([
+                            'success' => false,
+                            'message' => $e->getMessage()
+                        ]);
+                    }
                     break;
             }
             break;

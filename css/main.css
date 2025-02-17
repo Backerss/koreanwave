@@ -1567,3 +1567,284 @@ footer hr {
     height: 3px;
     background-color: #0d6efd;
 }
+
+/* Developer Info */
+.developer-info {
+    text-align: center;
+    margin: 1rem 0;
+    color: var(--gray-400);
+    font-size: 0.9rem;
+}
+
+.developer-info p {
+    margin: 0;
+}
+
+.developer-info i {
+    color: var(--primary);
+}
+
+:root {
+  /* Core Colors */
+  --primary: #1a237e;        /* Deep Blue */
+  --primary-dark: #0d1757;   /* Darker Blue */
+  --secondary: #ffd700;      /* Golden Yellow */
+  --secondary-dark: #ffc400; /* Darker Yellow */
+  
+  /* Supporting Colors */
+  --blue-light: #e3f2fd;
+  --blue-accent: #2962ff;
+  --yellow-light: #fff8e1;
+  
+  /* Neutral Colors */
+  --gray-50: #f8f9fa;
+  --gray-100: #f2f4f6;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(26, 35, 126, 0.1);
+  --shadow: 0 4px 6px rgba(26, 35, 126, 0.15);
+  --shadow-md: 0 6px 10px rgba(26, 35, 126, 0.2);
+  --shadow-lg: 0 8px 16px rgba(26, 35, 126, 0.25);
+}
+
+/* Hero Section */
+#hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+.hero-title {
+  color: var(--secondary);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Feature Cards */
+.feature-card {
+  border: 2px solid var(--gray-200);
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  border-color: var(--secondary);
+  transform: translateY(-5px);
+}
+
+.feature-card i {
+  color: var(--primary);
+  background: var(--blue-light);
+}
+
+/* Course Cards */
+.course-card {
+  border: 1px solid var(--gray-200);
+}
+
+.course-card:hover {
+  border-color: var(--secondary);
+}
+
+.course-badge {
+  background: var(--secondary);
+  color: var(--primary);
+}
+
+/* Stats Section */
+.stat-card-modern {
+  background: white;
+  border: 2px solid var(--gray-200);
+}
+
+.stat-card-modern:hover {
+  border-color: var(--secondary);
+  background: var(--primary);
+  color: white;
+}
+
+.stat-card-modern .counter {
+  color: var(--primary);
+}
+
+.stat-card-modern:hover .counter {
+  color: var(--secondary);
+}
+
+/* Contact Section */
+.contact-form .btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.contact-form .btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+/* Footer */
+footer {
+  background: var(--primary-dark);
+}
+
+.footer-social a:hover {
+  background: var(--secondary);
+  color: var(--primary);
+}
+
+/* Responsive Design Updates */
+@media (max-width: 768px) {
+  :root {
+    --shadow: 0 2px 4px rgba(26, 35, 126, 0.1);
+    --shadow-lg: 0 4px 8px rgba(26, 35, 126, 0.15);
+  }
+
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .feature-card,
+  .course-card,
+  .stat-card-modern {
+    margin-bottom: 1rem;
+  }
+
+  .contact-form,
+  .contact-info {
+    padding: 1.5rem;
+  }
+}
+
+/* Mobile Navigation */
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Custom Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Developer Info Section */
+.developer-info {
+  background: var(--primary);
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 2rem 0;
+  box-shadow: var(--shadow);
+}
+
+.developer-info i {
+  color: var(--secondary);
+  margin-right: 0.5rem;
+}
+
+.developer-info:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Stats Cards in Hero Section */
+.stats-cards {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1rem 1.5rem;
+  border-radius: var(--border-radius);
+  text-align: center;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.stat-card h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.stat-card p {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Responsive Design for Stats Cards */
+@media (max-width: 991.98px) {
+  .stats-cards {
+    position: static;
+    margin-top: 2rem;
+  }
+
+  .stat-card {
+    padding: 0.75rem 1rem;
+  }
+
+  .stat-card h3 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .stats-cards {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    flex: 0 1 calc(50% - 0.75rem);
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-cards {
+    margin-top: 1.5rem;
+  }
+
+  .stat-card {
+    flex: 1 1 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  .stat-card h3 {
+    font-size: 1.25rem;
+  }
+
+  .stat-card p {
+    font-size: 0.8rem;
+  }
+}

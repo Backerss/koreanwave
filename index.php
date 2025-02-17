@@ -66,7 +66,7 @@ $systemStats = require 'system/getStats.php';
             <div class="row align-items-center">
                 <div class="col-lg-6 hero-content">
                     <h1 class="hero-title animation-fadeInUp">
-                        เรียนภาษาเกาหลี<br>ออนไลน์
+                    บทเรียนภาษาเกาหลี<br>ออนไลน์
                     </h1>
                     <p class="hero-subtitle animation-fadeInUp animation-delay-1">
                         พัฒนาทักษะภาษาเกาหลีของคุณกับระบบการเรียนการสอนที่ทันสมัย 
@@ -234,7 +234,7 @@ $systemStats = require 'system/getStats.php';
                 <div class="col-md-4">
                     <div class="course-card">
                         <div class="course-image">
-                            <img src="https://placehold.co/400x300/6f42c1/ffffff?text=Course:+<?= urlencode($course['title']) ?>" 
+                            <img src="https://placehold.co/400x300/1a237e/ffffff?text=Course:+<?= urlencode($course['title']) ?>" 
                                  alt="<?= htmlspecialchars($course['title']) ?>" 
                                  class="img-fluid">
                             <div class="course-overlay">
@@ -421,6 +421,12 @@ $systemStats = require 'system/getStats.php';
                     <a href="#"><i class="fab fa-line"></i></a>
                     <a href="#"><i class="fab fa-youtube"></i></a>
                     <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+                <div class="developer-info">
+                    <p class="mb-2">
+                        <i class="fas fa-code me-2"></i>
+                        พัฒนาโดย: นายอาสาฬ รอดนวน
+                    </p>
                 </div>
                 <p class="copyright">
                     &copy; <?= date('Y') ?> โรงเรียนสตรีนครสวรรค์. All rights reserved.

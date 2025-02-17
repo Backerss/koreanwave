@@ -1,0 +1,66 @@
+.changes-comparison {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.change-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.field-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.old-value {
+    color: #dc3545;
+    text-decoration: line-through;
+    margin-left: 10px;
+}
+
+.new-value {
+    color: #28a745;
+    margin-left: 10px;
+}
+
+#logsTable {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.table-filter-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.view-changes {
+    white-space: nowrap;
+}
+
+.filter-group {
+    display: flex;
+    gap: 10px;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.table-responsive {
+    margin-top: 1rem;
+}
+
+#refreshLogs {
+    margin-left: auto;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
