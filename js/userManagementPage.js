@@ -15,7 +15,15 @@ $(document).ready(function() {
                     url: '../../system/manageUsers.php',
                     type: 'GET',
                     data: { action: 'list' },
-                    dataSrc: response => response.success ? response.data : []
+                    dataSrc: function(response) {
+                        // เพิ่ม debug log
+                        
+                        if (response.success && response.data && response.data.users) {
+                            return response.data.users;
+                        }
+                        // ถ้าไม่มีข้อมูลให้ return array ว่าง
+                        return [];
+                    }
                 },
                 columns: [
                     { 
