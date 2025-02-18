@@ -276,38 +276,6 @@ $(document).ready(function () {
             }
         }
 
-        // Notification Bell Click
-        $('.notification-bell').on('click', function () {
-            try {
-                Swal.fire({
-                    title: 'การแจ้งเตือน',
-                    html: `
-                        <div class="notification-list">
-                            <div class="notification-item">
-                                <div class="details">
-                                    <p>ส่งการบ้านวิชาคณิตศาสตร์</p>
-                                    <small>กำหนดส่ง: วันนี้</small>
-                                </div>
-                            </div>
-                            <div class="notification-item">
-                                <div class="details">
-                                    <p>ประกาศหยุดเรียนวันศุกร์ที่ 8 ก.พ.</p>
-                                    <small>2 ชั่วโมงที่แล้ว</small>
-                                </div>
-                            </div>
-                        </div>
-                    `,
-                    showConfirmButton: false,
-                    showCloseButton: true,
-                    customClass: {
-                        popup: 'notification-popup'
-                    }
-                });
-            } catch (err) {
-                console.error('Notification error:', err);
-            }
-        });
-
         // Logout Button
         $('#logoutBtn').on('click', function (e) {
             e.preventDefault();
@@ -412,29 +380,48 @@ $(document).ready(function () {
     }
 
     // Cleanup function for page unload
-    $(window).on('unload', function () {
-        if (clockInterval) {
-            clearInterval(clockInterval);
-        }
-        
-        // Clean up all loaded scripts
-        scriptManager.loadedScripts.forEach((script, path) => {
-            script.remove();
-        });
-        scriptManager.loadedScripts.clear();
-        
-        if (currentStylesheet) {
-            currentStylesheet.remove();
+    $(window).on('beforeunload', function() {
+        try {
+            // Stop clock interval if exists
+            if (typeof clockInterval !== 'undefined' && clockInterval) {
+                clearInterval(clockInterval);
+            }
+
+            // Clean up scripts safely
+            if (scriptManager && scriptManager.loadedScripts) {
+                scriptManager.loadedScripts.forEach((script, path) => {
+                    if (script && script.parentNode) {
+                        // Remove event listeners
+                        const clone = script.cloneNode(true);
+                        script.parentNode.replaceChild(clone, script);
+                        clone.remove();
+                        console.log('Removed script:', path);
+                    }
+                });
+                scriptManager.loadedScripts.clear();
+            }
+
+            // Clean up stylesheet safely
+            if (currentStylesheet && currentStylesheet.parentNode) {
+                currentStylesheet.remove();
+                currentStylesheet = null;
+                console.log('Removed stylesheet');
+            }
+
+            // Allow time for cleanup
+            return new Promise(resolve => {
+                setTimeout(resolve, 100);
+            });
+
+        } catch (err) {
+            console.error('Cleanup error:', err);
         }
     });
-});
 
-// Example for exam-creator.js
-(function () {
-    // Initialize only if we're on the exam creator page
-    if (!$('#examCreatorPage').hasClass('active')) return;
-
-    let questionCount = 0;
-
-    // Your existing exam creator code...
-})();
+    // Backup cleanup on page hide
+    $(window).on('pagehide', function() {
+        if (typeof clockInterval !== 'undefined') {
+            clearInterval(clockInterval);
+        }
+    });
+})
