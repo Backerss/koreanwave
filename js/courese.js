@@ -4,106 +4,237 @@ window.coursesList = window.coursesList || [];
 window.currentLessonId = window.currentLessonId || null;
 window.currentLessonTitle = window.currentLessonTitle || null;
 
-$(document).ready(function() {
-    // ป้องกันการ bind event ซ้ำ
-    $(document).off('click', '#saveCourseBtn').on('click', '#saveCourseBtn', function() {
-        if (window.isLoading) return;
-        window.isLoading = true;
+// Constants and Globals
+const CONFIG = {
+    RELOAD_INTERVAL: 30000,
+    API_PATHS: {
+        COURSES: '../../system/manageCourses.php',
+        VOCABULARY: '../../system/manageVocabulary.php'
+    },
+    CATEGORIES: {
+        vegetables: 'ผัก',
+        fruits: 'ผลไม้',
+        meats: 'เนื้อสัตว์'
+    }
+};
 
-        const formData = new FormData($('#addCourseForm')[0]);
-        
-        $.ajax({
-            url: '../../system/manageCourses.php',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                window.isLoading = false;
-                if (response.success) {
-                    $('#addCourseModal').modal('hide');
-                    $('#addCourseForm')[0].reset();
-                    loadCourses();
-                    Swal.fire('สำเร็จ', 'เพิ่มบทเรียนเรียบร้อยแล้ว', 'success');
-                } else {
-                    Swal.fire('ผิดพลาด', response.message || 'เกิดข้อผิดพลาดในการเพิ่มบทเรียน', 'error');
-                }
-            },
-            error: function() {
-                window.isLoading = false;
-                Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
-            }
+// Error Handler
+const ErrorHandler = {
+    log: (context, error) => {
+        console.error(`[${new Date().toISOString()}] ${context}:`, error);
+    },
+    show: (title, message = 'เกิดข้อผิดพลาดในการดำเนินการ') => {
+        Swal.fire({
+            icon: 'error',
+            title: title,
+            text: message
         });
-    });
+    }
+};
 
-    // Update course
-    $('#updateCourseBtn').click(function() {
-        const formData = new FormData($('#editCourseForm')[0]);
-        formData.append('action', 'update');
-        
-        $.ajax({
-            url: '../../system/manageCourses.php',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if (response.success) {
-                    $('#editCourseModal').modal('hide');
-                    loadCourses();
-                    Swal.fire('สำเร็จ', 'อัปเดตบทเรียนเรียบร้อยแล้ว', 'success');
-                }
-            }
+// API Service
+const ApiService = {
+    handleResponse: async (response) => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message || 'Operation failed');
+        }
+        return data;
+    },
+
+    post: async (url, data) => {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: data
+            });
+            return await ApiService.handleResponse(response);
+        } catch (error) {
+            ErrorHandler.log('API Post Error', error);
+            throw error;
+        }
+    },
+
+    get: async (url, params = {}) => {
+        try {
+            const queryString = new URLSearchParams(params).toString();
+            const response = await fetch(`${url}?${queryString}`);
+            return await ApiService.handleResponse(response);
+        } catch (error) {
+            ErrorHandler.log('API Get Error', error);
+            throw error;
+        }
+    }
+};
+
+// UI Manager
+const UIManager = {
+    toggleLoading: (show) => {
+        $('#loadingIndicator').toggleClass('d-none', !show);
+        window.isLoading = show;
+    },
+
+    showSuccess: (message) => {
+        Swal.fire({
+            icon: 'success',
+            title: 'สำเร็จ',
+            text: message
         });
-    });
+    },
 
-    // เริ่มต้นโหลดข้อมูล
-    loadCourses();
-
-    // ตั้งเวลาอัพเดทข้อมูลทุก 30 วินาที
-    setInterval(loadCourses, 30000);
-
-    // แก้ไขการ bind event ของปุ่มบันทึก
-    // ลบ event handlers เดิมก่อน
-    $('#saveVocabularyBtn').off('click');
-    
-    // bind event handler ใหม่
-    $('#saveVocabularyBtn').on('click', function() {
-        const formData = new FormData($('#vocabularyForm')[0]);
-        formData.append('action', formData.get('id') ? 'update' : 'add');
-
-        $.ajax({
-            url: '../../system/manageVocabulary.php',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if (response.success) {
-                    $('#vocabularyFormModal').modal('hide');
-                    loadVocabulary(window.currentLessonId);
-                    // รีเซ็ตฟอร์ม
-                    $('#vocabularyForm')[0].reset();
-                    $('#currentImage').empty();
-                    $('#currentAudio').empty();
-                    Swal.fire('สำเร็จ', 'บันทึกข้อมูลคำศัพท์เรียบร้อยแล้ว', 'success');
-                }
-            },
-            error: function(xhr) {
-                Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-            }
-        });
-    });
-
-    // ปุ่มเพิ่มคำศัพท์
-    $('#addVocabBtn').off('click').on('click', function() {
-        const form = $('#vocabularyForm')[0];
+    resetForm: (formId) => {
+        const form = $(formId)[0];
         form.reset();
-        $('#currentImage').empty();
-        $('#currentAudio').empty();
-        $('[name="lesson_id"]').val(window.currentLessonId);
-        $('#vocabularyFormModal').modal('show');
+        $('#currentImage, #currentAudio').empty();
+    }
+};
+
+// Course Manager
+const CourseManager = {
+    async loadCourses() {
+        if (window.isLoading) return;
+        
+        try {
+            UIManager.toggleLoading(true);
+            const response = await ApiService.get(CONFIG.API_PATHS.COURSES, { action: 'get' });
+            
+            const courseListElement = $('#coursesList');
+            courseListElement.empty();
+
+            if (!response.courses.length) {
+                courseListElement.html(`
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">ยังไม่มีบทเรียน กรุณาเพิ่มบทเรียนใหม่</p>
+                    </div>
+                `);
+                return;
+            }
+
+            response.courses.forEach(course => {
+                courseListElement.append(this.createCourseCard(course));
+            });
+
+        } catch (error) {
+            ErrorHandler.show('โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถโหลดรายการบทเรียนได้');
+            ErrorHandler.log('Load Courses Error', error);
+        } finally {
+            UIManager.toggleLoading(false);
+        }
+    },
+
+    createCourseCard(course) {
+        return `
+            <div class="col-md-4 mb-4">
+                <div class="card course-card">
+                    <div class="card-body">
+                        <h5 class="card-title">${course.title}</h5>
+                        <span class="category-badge mb-3">
+                            ${CONFIG.CATEGORIES[course.category] || course.category}
+                        </span>
+                        <div class="d-flex justify-content-end mt-3 action-buttons">
+                            <button class="btn btn-outline-success action-btn me-2" 
+                                    onclick="VocabularyManager.show(${course.id}, '${course.title}')">
+                                <i class="fas fa-book"></i> คำศัพท์
+                            </button>
+                            <button class="btn btn-outline-primary action-btn me-2" 
+                                    onclick="CourseManager.edit(${course.id})">
+                                <i class="fas fa-edit"></i> แก้ไข
+                            </button>
+                            <button class="btn btn-outline-danger action-btn" 
+                                    onclick="CourseManager.delete(${course.id})">
+                                <i class="fas fa-trash"></i> ลบ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+};
+
+// Initialize Application
+$(document).ready(() => {
+    // Initialize event handlers
+    initializeEventHandlers();
+    
+    // Load initial data
+    CourseManager.loadCourses();
+    
+});
+
+// Event handler initialization
+function initializeEventHandlers() {
+    // Course form handlers
+    $('#saveCourseBtn').on('click', async (e) => {
+        e.preventDefault();
+        if (window.isLoading) return;
+
+        try {
+            UIManager.toggleLoading(true);
+            const formData = new FormData($('#addCourseForm')[0]);
+            await ApiService.post(CONFIG.API_PATHS.COURSES, formData);
+            
+            $('#addCourseModal').modal('hide');
+            UIManager.resetForm('#addCourseForm');
+            await CourseManager.loadCourses();
+            UIManager.showSuccess('เพิ่มบทเรียนเรียบร้อยแล้ว');
+        } catch (error) {
+            ErrorHandler.show('เพิ่มบทเรียนไม่สำเร็จ', error.message);
+        } finally {
+            UIManager.toggleLoading(false);
+        }
     });
+
+    // Add other event handlers...
+}
+
+// เริ่มต้นโหลดข้อมูล
+loadCourses();
+
+// แก้ไขการ bind event ของปุ่มบันทึก
+// ลบ event handlers เดิมก่อน
+$('#saveVocabularyBtn').off('click');
+    
+// bind event handler ใหม่
+$('#saveVocabularyBtn').on('click', function() {
+    const formData = new FormData($('#vocabularyForm')[0]);
+    formData.append('action', formData.get('id') ? 'update' : 'add');
+
+    $.ajax({
+        url: '../../system/manageVocabulary.php',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                $('#vocabularyFormModal').modal('hide');
+                loadVocabulary(window.currentLessonId);
+                // รีเซ็ตฟอร์ม
+                $('#vocabularyForm')[0].reset();
+                $('#currentImage').empty();
+                $('#currentAudio').empty();
+                Swal.fire('สำเร็จ', 'บันทึกข้อมูลคำศัพท์เรียบร้อยแล้ว', 'success');
+            }
+        },
+        error: function(xhr) {
+            Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+        }
+    });
+});
+
+// ปุ่มเพิ่มคำศัพท์
+$('#addVocabBtn').off('click').on('click', function() {
+    const form = $('#vocabularyForm')[0];
+    form.reset();
+    $('#currentImage').empty();
+    $('#currentAudio').empty();
+    $('[name="lesson_id"]').val(window.currentLessonId);
+    $('#vocabularyFormModal').modal('show');
 });
 
 // ป้องกันการโหลดข้อมูลซ้ำ
