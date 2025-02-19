@@ -403,6 +403,7 @@ $systemStats = require 'system/getStats.php';
                         <li><a href="#features">ระบบการจัดการ</a></li>
                         <li><a href="#learning-process">กระบวนการเรียนรู้</a></li>
                         <li><a href="#contact">ติดต่อเรา</a></li>
+                        <li><a href="#">ผู้จัดทำ</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
