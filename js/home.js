@@ -5,11 +5,11 @@ $(document).ready(function () {
     // Initialize error logging
     const Logger = {
         error: (context, error) => {
-            console.error(`[${new Date().toISOString()}] ${context}:`, error);
+            //console.error(`[${new Date().toISOString()}] ${context}:`, error);
             // You could also send to server or external logging service
         },
         info: (context, message) => {
-            console.info(`[${new Date().toISOString()}] ${context}:`, message);
+            //console.info(`[${new Date().toISOString()}] ${context}:`, message);
         }
     };
 
@@ -47,14 +47,16 @@ $(document).ready(function () {
                 const scriptPath = PageManager.scriptMap[pageName];
                 if (!scriptPath) return Promise.resolve();
 
-                // Cleanup existing script
-                const existingScript = PageManager.loadedScripts.get(scriptPath);
-                if (existingScript) {
-                    existingScript.remove();
-                    PageManager.loadedScripts.delete(scriptPath);
-                }
+                // Remove all existing scripts from previous loads
+                PageManager.loadedScripts.forEach((script, path) => {
+                    if (script && script.parentNode) {
+                        script.parentNode.removeChild(script);
+                        Logger.info('Script Cleanup', `Removed script: ${path}`);
+                    }
+                });
+                PageManager.loadedScripts.clear();
 
-                // Create and load new script
+                // Create and load new script with cache busting
                 const script = document.createElement('script');
                 script.src = `${scriptPath}?v=${Date.now()}`;
                 script.type = 'text/javascript';
@@ -77,6 +79,7 @@ $(document).ready(function () {
 
         loadStylesheet: (pageName) => {
             try {
+                // Remove existing stylesheet
                 if (PageManager.currentStylesheet) {
                     PageManager.currentStylesheet.remove();
                     PageManager.currentStylesheet = null;
@@ -158,13 +161,23 @@ $(document).ready(function () {
 
                 // Cleanup current page
                 if (PageManager.currentPage) {
-                    if (PageManager.currentPage === 'users' && $.fn.DataTable.isDataTable('#usersTable')) {
-                        $('#usersTable').DataTable().destroy();
-                    }
+                    // ทำความสะอาด DataTables ทั้งหมดในหน้าปัจจุบัน
+                    $('table.dataTable').each(function() {
+                        if ($.fn.DataTable.isDataTable(this)) {
+                            try {
+                                $(this).DataTable().destroy();
+                            } catch (e) {
+                                console.warn('DataTable destroy warning:', e);
+                            }
+                        }
+                    });
+
                     const currentScript = PageManager.scriptMap[PageManager.currentPage];
                     if (currentScript) {
                         const script = PageManager.loadedScripts.get(currentScript);
-                        if (script) script.remove();
+                        if (script && script.parentNode) {
+                            script.parentNode.removeChild(script);
+                        }
                         PageManager.loadedScripts.delete(currentScript);
                     }
                 }

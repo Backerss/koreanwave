@@ -3,91 +3,119 @@ $(document).ready(function() {
     
     // Initialize DataTable
     function initializeTable() {
-        if ($.fn.DataTable.isDataTable('#studentsProgressTable')) {
-            $('#studentsProgressTable').DataTable().destroy();
-        }
-
-        progressTable = $('#studentsProgressTable').DataTable({
-            ajax: {
-                url: '../../system/progressTracker.php',
-                type: 'GET',
-                data: function(d) {
-                    return {
-                        action: 'getStudentsProgress',
-                        grade: $('#gradeFilter').val(),
-                        class: $('#classFilter').val()
-                    };
-                }
-            },
-            columns: [
-                { data: 'student_id' },
-                { data: 'full_name' },
-                { 
-                    data: null,
-                    render: function(data) {
-                        return `ม.${data.grade_level}/${data.classroom}`;
-                    }
-                },
-                { 
-                    data: 'progress',
-                    render: function(data) {
-                        return `
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: ${data}%" 
-                                     aria-valuenow="${data}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
-                                    ${data}%
-                                </div>
-                            </div>
-                        `;
-                    }
-                },
-                { 
-                    data: 'pretest_avg',
-                    render: function(data) {
-                        return data ? `${data}%` : '-';
-                    }
-                },
-                { 
-                    data: 'posttest_avg',
-                    render: function(data) {
-                        return data ? `${data}%` : '-';
-                    }
-                },
-                {
-                    data: null,
-                    render: function(data) {
-                        const improvement = data.posttest_avg - data.pretest_avg;
-                        const color = improvement > 0 ? 'success' : improvement < 0 ? 'danger' : 'secondary';
-                        const icon = improvement > 0 ? 'up' : improvement < 0 ? 'down' : 'minus';
-                        return `
-                            <span class="text-${color}">
-                                <i class="fas fa-arrow-${icon}"></i> 
-                                ${Math.abs(improvement)}%
-                            </span>
-                        `;
-                    }
-                },
-                {
-                    data: null,
-                    render: function(data) {
-                        return `
-                            <button class="btn btn-sm btn-primary view-details" 
-                                    data-id="${data.id}" 
-                                    title="ดูรายละเอียด">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        `;
-                    }
-                }
-            ],
-            order: [[2, 'asc']],
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Thai.json'
+        try {
+            // เช็คว่ามีตารางอยู่จริงๆ ก่อนที่จะ destroy
+            if ($.fn.DataTable.isDataTable('#studentsProgressTable') && $('#studentsProgressTable').length) {
+                $('#studentsProgressTable').DataTable().destroy();
             }
-        });
+
+            // เช็คว่ามี element อยู่จริง
+            if (!$('#studentsProgressTable').length) {
+                console.warn('Table element not found');
+                return;
+            }
+
+            progressTable = $('#studentsProgressTable').DataTable({
+                processing: true,
+                serverSide: false,
+                ajax: {
+                    url: '../../system/progressTracker.php',
+                    type: 'GET',
+                    data: function(d) {
+                        return {
+                            action: 'getStudentsProgress',
+                            grade: $('#gradeFilter').val(),
+                            class: $('#classFilter').val()
+                        };
+                    },
+                    error: function(xhr, error, thrown) {
+                        console.error('DataTables Ajax Error:', error);
+                    }
+                },
+                columns: [
+                    { data: 'student_id' },
+                    { data: 'full_name' },
+                    { 
+                        data: null,
+                        render: function(data) {
+                            return `ม.${data.grade_level}/${data.classroom}`;
+                        }
+                    },
+                    { 
+                        data: 'progress',
+                        render: function(data) {
+                            return `
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: ${data}%" 
+                                         aria-valuenow="${data}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        ${data}%
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    },
+                    { 
+                        data: 'pretest_avg',
+                        render: function(data) {
+                            return data ? `${data}%` : '-';
+                        }
+                    },
+                    { 
+                        data: 'posttest_avg',
+                        render: function(data) {
+                            return data ? `${data}%` : '-';
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data) {
+                            const improvement = data.posttest_avg - data.pretest_avg;
+                            const color = improvement > 0 ? 'success' : improvement < 0 ? 'danger' : 'secondary';
+                            const icon = improvement > 0 ? 'up' : improvement < 0 ? 'down' : 'minus';
+                            return `
+                                <span class="text-${color}">
+                                    <i class="fas fa-arrow-${icon}"></i> 
+                                    ${Math.abs(improvement)}%
+                                </span>
+                            `;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data) {
+                            return `
+                                <button class="btn btn-sm btn-primary view-details" 
+                                        data-id="${data.id}" 
+                                        title="ดูรายละเอียด">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            `;
+                        }
+                    }
+                ],
+                order: [[2, 'asc']],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Thai.json'
+                },
+                initComplete: function() {
+                    console.log('Table initialized successfully');
+                },
+                drawCallback: function() {
+                    console.log('Table drawn successfully');
+                }
+            });
+
+            // Add error handling
+            progressTable.on('error.dt', function(e, settings, techNote, message) {
+                console.error('DataTable error:', message);
+            });
+
+        } catch (error) {
+            console.error('Table initialization error:', error);
+        }
     }
 
     // Update loadSummaryStats function
@@ -208,5 +236,21 @@ $(document).ready(function() {
             initializeTable();
             loadSummaryStats();
         }
+    });
+
+    // เพิ่ม cleanup function
+    function cleanupTable() {
+        try {
+            if ($.fn.DataTable.isDataTable('#studentsProgressTable') && $('#studentsProgressTable').length) {
+                $('#studentsProgressTable').DataTable().destroy();
+            }
+        } catch (error) {
+            console.error('Cleanup error:', error);
+        }
+    }
+
+    // เรียกใช้ cleanup เมื่อออกจากหน้า
+    $(document).on('pageChanged', function() {
+        cleanupTable();
     });
 });

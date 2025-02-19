@@ -270,11 +270,6 @@ try {
                         $stmt->execute([$_POST['id']]);
                         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                        // ตรวจสอบว่าพบผู้ใช้หรือไม่
-                        if (!$userData) {
-                            throw new Exception('ไม่พบข้อมูลผู้ใช้');
-                        }
-
                         $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
                         $success = $stmt->execute([$_POST['id']]);
 
@@ -292,7 +287,6 @@ try {
                                 null
                             );
 
-                            $db->commit(); // เพิ่ม commit transaction
                             sendResponse(true);
                         } else {
                             throw new Exception('ไม่สามารถลบผู้ใช้ได้');
