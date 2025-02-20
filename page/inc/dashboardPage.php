@@ -1,10 +1,10 @@
 <?php
 $userId = $_SESSION['user_data']['id'];
 
-// ดึงข้อมูลสถิติทั่วไป
+// แก้ไขส่วน SQL query
 $statsQuery = $db->prepare("
     SELECT 
-        COALESCE(AVG(er.score), 0) as avg_grade,
+        COALESCE(AVG(er.score), 0) as raw_score, -- เปลี่ยนชื่อเป็น raw_score
         COUNT(DISTINCT lp.lesson_id) as total_lessons_accessed,
         COALESCE(SUM(lp.time_spent), 0) as total_time_spent,
         COALESCE((SELECT COUNT(*) FROM lessons), 0) as total_available_lessons,
@@ -14,8 +14,23 @@ $statsQuery = $db->prepare("
     LEFT JOIN exam_results er ON e.id = er.exam_id AND er.user_id = ?
     WHERE lp.user_id = ?
 ");
+
+// เพิ่มฟังก์ชันคำนวณเกรด
+function calculateGrade($score) {
+    if ($score >= 80) return ['grade' => '4.00', 'class' => 'text-success'];
+    if ($score >= 75) return ['grade' => '3.50', 'class' => 'text-success'];
+    if ($score >= 70) return ['grade' => '3.00', 'class' => 'text-info'];
+    if ($score >= 65) return ['grade' => '2.50', 'class' => 'text-info'];
+    if ($score >= 60) return ['grade' => '2.00', 'class' => 'text-warning'];
+    if ($score >= 55) return ['grade' => '1.50', 'class' => 'text-warning'];
+    if ($score >= 50) return ['grade' => '1.00', 'class' => 'text-danger'];
+    return ['grade' => '0.00', 'class' => 'text-danger'];
+}
+
+// แก้ไขส่วนการประมวลผลข้อมูล
 $statsQuery->execute([$userId, $userId]);
 $stats = $statsQuery->fetch();
+$gradeInfo = calculateGrade($stats['raw_score']);
 
 // เพิ่มการตรวจสอบและกำหนดค่าเริ่มต้น
 $stats['total_available_lessons'] = max($stats['total_available_lessons'], 1); // ป้องกันการหารด้วยศูนย์
@@ -84,8 +99,13 @@ $timeSpent = $hours > 0 ? "{$hours} ชั่วโมง {$minutes} นาท�
                     <i class="fas fa-graduation-cap"></i>
                 </div>
                 <div class="stat-details">
-                    <h3><?php echo number_format($stats['avg_grade'], 2); ?></h3>
-                    <span>คะแนนเฉลี่ย</span>
+                    <h3 class="<?php echo $gradeInfo['class']; ?>">
+                        <?php echo $gradeInfo['grade']; ?>
+                        <small class="text-muted" style="font-size: 0.6em;">
+                            (<?php echo number_format($stats['raw_score'], 1); ?>%)
+                        </small>
+                    </h3>
+                    <span>เกรดเฉลี่ย</span>
                 </div>
             </div>
         </div>

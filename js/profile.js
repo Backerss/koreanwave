@@ -51,6 +51,12 @@ $(document).ready(function() {
 
     // Avatar Upload Handler
     $('#avatarUpload').change(function(e) {
+
+        if (loadingState) {
+            showToast('error', 'ยังไม่เปิดให้อัพโหลดรูปในขณะนี้ กรุณาติดต่อผู้พัฒนาระบบ');
+            return;
+        }
+
         if (e.target.files && e.target.files[0]) {
             const reader = new FileReader();
             const file = e.target.files[0];
