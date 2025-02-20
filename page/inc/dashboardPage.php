@@ -148,17 +148,39 @@ $timeSpent = $hours > 0 ? "{$hours} ชั่วโมง {$minutes} นาท�
                 </div>
                 <div class="card-body">
                     <?php foreach ($categoryLessons as $lesson): 
-                        $progress = $lesson['current_vocab_index'] / max($lesson['total_vocab'], 1) * 100;
+                        // คำนวณความก้าวหน้าใหม่
+                        $progress = 0;
+                        $statusClass = 'primary';
+                        $statusMessage = '';
+
+                        if ($lesson['pretest_done']) {
+                            $progress = 33; // ทำแบบทดสอบก่อนเรียนแล้ว = 33%
+                        }
+
+                        if ($lesson['posttest_done']) {
+                            if ($lesson['best_score'] >= 50) {
+                                $progress = 100; // ทำแบบทดสอบหลังเรียนและผ่าน
+                                $statusClass = 'success';
+                            } else {
+                                $progress = 95; // ทำแบบทดสอบแล้วแต่ไม่ผ่าน
+                                $statusClass = 'warning';
+                                $statusMessage = '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> ยังไม่ผ่านเกณฑ์</span>';
+                            }
+                        } elseif ($lesson['current_vocab_index'] > 0) {
+                            // คำนวณความก้าวหน้าจากการเรียนเนื้อหา (33-95%)
+                            $vocabProgress = ($lesson['current_vocab_index'] / max($lesson['total_vocab'], 1)) * 62;
+                            $progress = 33 + $vocabProgress;
+                        }
                     ?>
                     <div class="lesson-progress-card mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="mb-0"><?php echo htmlspecialchars($lesson['title']); ?></h6>
-                            <span class="badge bg-<?php echo $lesson['completed'] ? 'success' : 'primary'; ?>">
+                            <span class="badge bg-<?php echo $statusClass; ?>">
                                 <?php echo number_format($progress, 0); ?>%
                             </span>
                         </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-<?php echo $lesson['completed'] ? 'success' : 'primary'; ?>"
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-<?php echo $statusClass; ?>"
                                  role="progressbar" 
                                  style="width: <?php echo $progress; ?>%"
                                  aria-valuenow="<?php echo $progress; ?>" 
@@ -171,14 +193,17 @@ $timeSpent = $hours > 0 ? "{$hours} ชั่วโมง {$minutes} นาท�
                                 <small class="text-muted">
                                     <i class="fas fa-book me-1"></i><?php echo $lesson['total_vocab']; ?> คำ
                                     <i class="fas fa-clock ms-2 me-1"></i><?php echo floor($lesson['time_spent']/60); ?> นาที
+                                    <?php if ($statusMessage): ?>
+                                        <span class="ms-2"><?php echo $statusMessage; ?></span>
+                                    <?php endif; ?>
                                 </small>
                             </div>
                             <div class="lesson-badges">
                                 <span class="badge bg-<?php echo $lesson['pretest_done'] ? 'success' : 'secondary'; ?> me-1">
                                     <i class="fas fa-check-circle me-1"></i>Pre-test
                                 </span>
-                                <span class="badge bg-<?php echo $lesson['posttest_done'] ? 'success' : 'secondary'; ?>">
-                                    <i class="fas fa-check-circle me-1"></i>Post-test
+                                <span class="badge bg-<?php echo $lesson['posttest_done'] ? ($lesson['best_score'] >= 50 ? 'success' : 'warning') : 'secondary'; ?>">
+                                    <i class="fas <?php echo $lesson['posttest_done'] ? ($lesson['best_score'] >= 50 ? 'fa-check-circle' : 'fa-exclamation-circle') : 'fa-check-circle'; ?> me-1"></i>Post-test
                                 </span>
                             </div>
                         </div>

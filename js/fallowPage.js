@@ -60,13 +60,15 @@ $(document).ready(function() {
                     { 
                         data: 'pretest_avg',
                         render: function(data) {
-                            return data ? `${data}%` : '-';
+                            // แสดงคะแนนดิบแบบไม่มีทศนิยม
+                            return data ? Math.round(data) : '-';
                         }
                     },
                     { 
                         data: 'posttest_avg',
                         render: function(data) {
-                            return data ? `${data}%` : '-';
+                            // แสดงคะแนนดิบแบบไม่มีทศนิยม
+                            return data ? Math.round(data) : '-';
                         }
                     },
                     {
@@ -75,10 +77,18 @@ $(document).ready(function() {
                             const improvement = data.posttest_avg - data.pretest_avg;
                             const color = improvement > 0 ? 'success' : improvement < 0 ? 'danger' : 'secondary';
                             const icon = improvement > 0 ? 'up' : improvement < 0 ? 'down' : 'minus';
+                            
+                            // แปลงเป็นทศนิยม 2 ตำแหน่ง
+                            let formattedImprovement = Math.abs(improvement).toFixed(2);
+                            // ถ้าลงท้ายด้วย .00 ให้ตัดออก
+                            if (formattedImprovement.endsWith('.00')) {
+                                formattedImprovement = Math.abs(Math.round(improvement)).toString();
+                            }
+
                             return `
                                 <span class="text-${color}">
                                     <i class="fas fa-arrow-${icon}"></i> 
-                                    ${Math.abs(improvement)}%
+                                    ${formattedImprovement}
                                 </span>
                             `;
                         }
