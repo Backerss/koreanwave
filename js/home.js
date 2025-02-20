@@ -281,6 +281,54 @@ $(document).ready(function () {
         }
     };
 
+    // เพิ่ม Session Manager
+    const SessionManager = {
+        initialize: function() {
+            // ตรวจสอบ session ทุก 3 นาที
+            this.checkInterval = setInterval(() => this.checkSession(), 180000);
+            this.setupAjaxHandlers();
+        },
+
+        checkSession: async function() {
+            try {
+                const response = await fetch('../../system/checkSession.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
+                if (!response.ok) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Session check failed:', error);
+            }
+        },
+
+        setupAjaxHandlers: function() {
+            // กำหนดค่า default สำหรับ Ajax requests ทั้งหมด
+            $.ajaxSetup({
+                cache: false,
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                },
+                error: function(xhr, status, error) {
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        window.location.reload();
+                    }
+                }
+            });
+        }
+    };
+
     // Initialize application
     try {
         initializeEventHandlers();
@@ -302,6 +350,9 @@ $(document).ready(function () {
                 }, 300);
             }
         }
+
+        // Initialize session manager
+        SessionManager.initialize();
 
         Logger.info('Initialization', 'Application successfully initialized');
     } catch (error) {

@@ -15,6 +15,9 @@ if (!isset($_SESSION['user_data'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>ระบบจัดการข้อมูล - โรงเรียนสตรีนครสวรรค์</title>
     <!-- Bootstrap 5.3 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -237,6 +240,7 @@ if (!isset($_SESSION['user_data'])) {
     <script>
         // Add this before your main home.js script
         document.addEventListener('DOMContentLoaded', function() {
+            
             // Hide loading overlay after everything is loaded
             setTimeout(() => {
                 const loadingOverlay = document.querySelector('.initial-loading-overlay');
