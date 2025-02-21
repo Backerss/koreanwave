@@ -232,32 +232,43 @@ $(document).ready(function() {
             .closest('.mb-3');
         
         studentFields.toggle(show);
-        form.find('[name="student_id"]').prop('required', show);
-        if (!show) {
-            studentFields.find('input, select').val('');
+        
+        // จัดการ required attributes
+        if (show) {
+            form.find('[name="student_id"]').prop('required', true);
+            form.find('[name="grade_level"]').prop('required', true);
+            form.find('[name="classroom"]').prop('required', true);
+        } else {
+            studentFields.find('input, select').prop('required', false).val('');
         }
     }
 
     // เพิ่มฟังก์ชัน populateForm ในส่วน Utility Functions
     function populateForm(formSelector, data) {
+        // ตรวจสอบว่ามีข้อมูลหรือไม่
+        if (!data || typeof data !== 'object') {
+            console.error('Invalid data provided to populateForm:', data);
+            return;
+        }
+
         const form = $(formSelector);
+        if (!form.length) {
+            console.error('Form not found:', formSelector);
+            return;
+        }
         
         // วนลูปผ่านทุก property ใน data object
         Object.keys(data).forEach(key => {
             const input = form.find(`[name="${key}"]`);
             if (input.length) {
                 if (input.is('select')) {
-                    // กรณีเป็น select element
-                    input.val(data[key]).trigger('change');
+                    input.val(data[key] || '').trigger('change');
                 } else if (input.attr('type') === 'radio') {
-                    // กรณีเป็น radio button
                     input.filter(`[value="${data[key]}"]`).prop('checked', true).trigger('change');
                 } else if (input.attr('type') === 'checkbox') {
-                    // กรณีเป็น checkbox
-                    input.prop('checked', data[key]).trigger('change');
+                    input.prop('checked', Boolean(data[key])).trigger('change');
                 } else {
-                    // กรณีเป็น input ทั่วไป
-                    input.val(data[key]);
+                    input.val(data[key] || '');
                 }
             }
         });
@@ -276,8 +287,6 @@ $(document).ready(function() {
     // CRUD Operations
     function handleFormSubmit(action, formSelector) {
         const form = $(formSelector);
-        
-        // ใช้ HTML5 form validation
         if (!form[0].checkValidity()) {
             form[0].reportValidity();
             return;
@@ -286,6 +295,31 @@ $(document).ready(function() {
         const formData = new FormData(form[0]);
         formData.append('action', action);
 
+        // เพิ่ม debug log
+        console.log('Submitting form data:', Object.fromEntries(formData));
+
+        // Validate form data
+        if (formData.get('role') === 'student') {
+            const studentId = formData.get('student_id');
+            if (!studentId) {
+                showAlert('error', 'กรุณากรอกรหัสนักเรียน');
+                return;
+            }
+            if (!/^\d{5}$/.test(studentId)) {
+                showAlert('error', 'รหัสนักเรียนต้องเป็นตัวเลข 5 หลัก');
+                return;
+            }
+            if (!formData.get('grade_level')) {
+                showAlert('error', 'กรุณาเลือกระดับชั้น');
+                return;
+            }
+            if (!formData.get('classroom')) {
+                showAlert('error', 'กรุณาเลือกห้องเรียน');
+                return;
+            }
+        }
+
+        // ส่งข้อมูล
         $.ajax({
             url: '../../system/manageUsers.php',
             method: 'POST',
@@ -294,67 +328,130 @@ $(document).ready(function() {
             contentType: false,
             success: response => {
                 if (response.success) {
-                    const modalElement = form.closest('.modal')[0];
-                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    const modal = bootstrap.Modal.getInstance(form.closest('.modal'));
                     if (modal) {
                         modal.hide();
-                        setTimeout(() => {
-                            form[0].reset();
-                            form.find('.is-invalid').removeClass('is-invalid');
-                        }, 300);
+                        form[0].reset();
+                        form.find('.is-invalid').removeClass('is-invalid');
                     }
                     showAlert('success', 
                         action === 'add' ? 'เพิ่มผู้ใช้เรียบร้อย' : 'แก้ไขข้อมูลเรียบร้อย'
                     );
-                    usersTable.ajax.reload();
+                    if (usersTable) {
+                        usersTable.ajax.reload();
+                    }
                 } else {
-                    showAlert('error', response.message);
+                    showAlert('error', response.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
                 }
             },
             error: (xhr, status, error) => {
-                console.error('Form submit error:', error);
-                showAlert('error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                console.error('Form submit error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    error: error
+                });
+                
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    showAlert('error', response.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                } catch (e) {
+                    showAlert('error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                }
             }
         });
     }
 
+    // ปรับปรุง loadUserData function
     function loadUserData(id) {
         if (isLoading) return;
         isLoading = true;
-
         $.get('../../system/manageUsers.php', { action: 'get', id })
             .done(response => {
-                if (response.success) {
+                // เพิ่ม debug log
+                if (response.success && response.data.user) {
                     const modal = modalInstances.get('#editUserModal');
                     if (modal) {
-                        populateForm('#editUserForm', response.user);
-                        modal.show();
+                        try {
+                            populateForm('#editUserForm', response.data.user);
+                            modal.show();
+                        } catch (error) {
+                            console.error('Error populating form:', error);
+                            showAlert('error', 'เกิดข้อผิดพลาดในการแสดงข้อมูล');
+                        }
+                    } else {
+                        console.error('Modal instance not found');
+                        showAlert('error', 'ไม่พบ Modal สำหรับแก้ไขข้อมูล');
                     }
                 } else {
-                    showAlert('error', response.message);
+                    console.error('Invalid response:', response);
+                    showAlert('error', response.message || 'ไม่พบข้อมูลผู้ใช้');
                 }
             })
             .fail((xhr, status, error) => {
-                console.error('Load user error:', error);
+                console.error('Load user error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    error: error
+                });
                 showAlert('error', 'ไม่สามารถโหลดข้อมูลผู้ใช้ได้');
             })
-            .always(() => isLoading = false);
+            .always(() => {
+                isLoading = false;
+            });
     }
 
     function deleteUser(id) {
-        $.post('../../system/manageUsers.php', { action: 'delete', id })
-            .done(response => {
+        // เพิ่ม debug log
+        console.log('Attempting to delete user:', id);
+        
+        $.ajax({
+            url: '../../system/manageUsers.php',
+            method: 'POST',
+            data: { 
+                action: 'delete', 
+                id: id 
+            },
+            dataType: 'json',
+            success: response => {
                 if (response.success) {
                     showAlert('success', 'ลบผู้ใช้เรียบร้อยแล้ว');
-                    usersTable.ajax.reload();
+                    if (usersTable) {
+                        usersTable.ajax.reload(null, false); // false = ไม่ reset pagination
+                    }
                 } else {
-                    showAlert('error', response.message);
+                    showAlert('error', response.message || 'ไม่สามารถลบผู้ใช้ได้');
                 }
-            })
-            .fail((xhr, status, error) => {
-                console.error('Delete user error:', error);
+            },
+            error: (xhr, status, error) => {
+                console.error('Delete user error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    error: error
+                });
                 showAlert('error', 'ไม่สามารถลบผู้ใช้ได้');
-            });
+            }
+        });
+    }
+
+    function confirmDelete(id) {
+        Swal.fire({
+            title: 'ยืนยันการลบ',
+            text: 'คุณต้องการลบผู้ใช้นี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'ใช่, ลบ',
+            cancelButtonText: 'ยกเลิก',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                deleteUser(id);
+            }
+        });
     }
 
     // เพิ่ม CSS สำหรับ modal
