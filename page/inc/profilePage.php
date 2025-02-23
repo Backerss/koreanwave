@@ -51,12 +51,14 @@ $progressPercentage = ($userData['lessons_accessed'] / max($userData['total_less
                             <img src="<?php echo $userData['avatar_url'] ?? 'https://placehold.co/150'; ?>" 
                                  alt="Profile" 
                                  id="profileAvatar">
+                            <?php if ($userData['role'] !== 'student'): ?>
                             <div class="avatar-edit">
                                 <label for="avatarUpload">
                                     <i class="fas fa-camera"></i>
                                 </label>
                                 <input type="file" id="avatarUpload" accept="image/*" hidden>
                             </div>
+                            <?php endif; ?>
                         </div>
                         <h4 class="profile-name"><?php echo htmlspecialchars($userData['first_name'] . ' ' . $userData['last_name']); ?></h4>
                         <p class="profile-role">
@@ -116,11 +118,13 @@ $progressPercentage = ($userData['lessons_accessed'] / max($userData['total_less
                                 <i class="fas fa-user-edit"></i> ข้อมูลส่วนตัว
                             </a>
                         </li>
+                        <?php if ($userData['role'] !== 'student'): ?>
                         <li class="nav-item">
                             <a class="nav-link" data-bs-toggle="tab" href="#security">
                                 <i class="fas fa-shield-alt"></i> ความปลอดภัย
                             </a>
                         </li>
+                        <?php endif; ?>
                     </ul>
 
                     <div class="tab-content" id="profileTabContent">
@@ -222,6 +226,8 @@ $progressPercentage = ($userData['lessons_accessed'] / max($userData['total_less
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const userRole = '<?php echo $userData['role']; ?>';
+    
     // Utility Functions
     const showLoading = (message = 'กำลังดำเนินการ...') => {
         Swal.fire({
@@ -252,35 +258,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Avatar Upload Handler
+    // Avatar Upload Handler - Only for non-students
     const avatarUpload = document.getElementById('avatarUpload');
     const profileAvatar = document.getElementById('profileAvatar');
 
-    avatarUpload?.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    if (avatarUpload && userRole !== 'student') {
+        avatarUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
 
-        try {
-            validateFile(file);
-            showLoading('กำลังอัพโหลดรูปภาพ...');
+            try {
+                validateFile(file);
+                showLoading('กำลังอัพโหลดรูปภาพ...');
 
-            const formData = new FormData();
-            formData.append('avatar', file);
-            formData.append('action', 'updateAvatar');
+                const formData = new FormData();
+                formData.append('avatar', file);
+                formData.append('action', 'updateAvatar');
 
-            const response = await fetch('../../system/updateProfile.php', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await handleResponse(response);
+                const response = await fetch('../../system/updateProfile.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await handleResponse(response);
 
-            profileAvatar.src = result.avatar_url;
-            Swal.fire('สำเร็จ', 'อัพโหลดรูปโปรไฟล์เรียบร้อย', 'success');
-        } catch (error) {
-            Swal.fire('ผิดพลาด', error.message, 'error');
-            avatarUpload.value = ''; // Clear the file input
-        }
-    });
+                profileAvatar.src = result.avatar_url;
+                Swal.fire('สำเร็จ', 'อัพโหลดรูปโปรไฟล์เรียบร้อย', 'success');
+            } catch (error) {
+                Swal.fire('ผิดพลาด', error.message, 'error');
+                avatarUpload.value = ''; // Clear the file input
+            }
+        });
+    }
 
     // Personal Info Form Handler
     const personalInfoForm = document.getElementById('personalInfoForm');
@@ -325,33 +333,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Password Form Handler
+    // Password Form Handler - Only for non-students
     const passwordForm = document.getElementById('passwordForm');
-    passwordForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        if (formData.get('new_password') !== formData.get('confirm_password')) {
-            Swal.fire('ผิดพลาด', 'รหัสผ่านใหม่ไม่ตรงกัน', 'error');
-            return;
+    if (passwordForm && userRole !== 'student') {
+        passwordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            if (formData.get('new_password') !== formData.get('confirm_password')) {
+                Swal.fire('ผิดพลาด', 'รหัสผ่านใหม่ไม่ตรงกัน', 'error');
+                return;
+            }
+
+            try {
+                showLoading('กำลังเปลี่ยนรหัสผ่าน...');
+                formData.append('action', 'updatePassword');
+
+                const response = await fetch('../../system/updateProfile.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                await handleResponse(response);
+
+                e.target.reset();
+                Swal.fire('สำเร็จ', 'เปลี่ยนรหัสผ่านเรียบร้อย', 'success');
+            } catch (error) {
+                Swal.fire('ผิดพลาด', error.message, 'error');
+            }
+        });
+    }
+
+    // Additional security check
+    if (userRole === 'student') {
+        const securityTab = document.getElementById('security');
+        if (securityTab) {
+            securityTab.remove();
         }
-
-        try {
-            showLoading('กำลังเปลี่ยนรหัสผ่าน...');
-            formData.append('action', 'updatePassword');
-
-            const response = await fetch('../../system/updateProfile.php', {
-                method: 'POST',
-                body: formData
-            });
-            await handleResponse(response);
-
-            e.target.reset();
-            Swal.fire('สำเร็จ', 'เปลี่ยนรหัสผ่านเรียบร้อย', 'success');
-        } catch (error) {
-            Swal.fire('ผิดพลาด', error.message, 'error');
-        }
-    });
+    }
 
     // Add input validation
     document.querySelectorAll('input[type="tel"]').forEach(input => {

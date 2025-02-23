@@ -9,6 +9,13 @@ if (!isset($_SESSION['user_data'])) {
     exit;
 }
 
+if ($_SESSION['user_data']['role'] === 'student' && 
+    (isset($_POST['action']) && in_array($_POST['action'], ['updateAvatar', 'updatePassword']))) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์ในการดำเนินการนี้']);
+    exit;
+}
+
 $userId = $_SESSION['user_data']['id'];
 
 try {
