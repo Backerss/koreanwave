@@ -73,7 +73,21 @@ function initializeLogsTable() {
         ],
         order: [[0, 'desc']],
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/th.json'
+            emptyTable: 'ไม่พบข้อมูล',
+            info: 'แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ',
+            infoEmpty: 'แสดง 0 ถึง 0 จาก 0 รายการ',
+            infoFiltered: '(กรองจากทั้งหมด _MAX_ รายการ)',
+            lengthMenu: 'แสดง _MENU_ รายการ',
+            loadingRecords: 'กำลังโหลด...',
+            processing: 'กำลังดำเนินการ...',
+            search: 'ค้นหา:',
+            zeroRecords: 'ไม่พบข้อมูลที่ตรงกัน',
+            paginate: {
+                first: 'หน้าแรก',
+                last: 'หน้าสุดท้าย',
+                next: 'ถัดไป',
+                previous: 'ก่อนหน้า'
+            }
         },
         pageLength: 10,
         lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "ทั้งหมด"]]

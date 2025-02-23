@@ -108,7 +108,22 @@ $(document).ready(function() {
                 ],
                 order: [[2, 'asc']],
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Thai.json'
+                    "emptyTable": "ไม่พบข้อมูล",
+                    "info": "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+                    "infoEmpty": "แสดง 0 ถึง 0 จาก 0 รายการ",
+                    "infoFiltered": "(กรองข้อมูล _MAX_ ทุกรายการ)",
+                    "infoThousands": ",",
+                    "lengthMenu": "แสดง _MENU_ รายการ",
+                    "loadingRecords": "กำลังโหลดข้อมูล...",
+                    "processing": "กำลังดำเนินการ...",
+                    "search": "ค้นหา:",
+                    "zeroRecords": "ไม่พบข้อมูล",
+                    "paginate": {
+                        "first": "หน้าแรก",
+                        "last": "หน้าสุดท้าย", 
+                        "next": "ถัดไป",
+                        "previous": "ก่อนหน้า"
+                    }
                 },
                 initComplete: function() {
                     console.log('Table initialized successfully');
