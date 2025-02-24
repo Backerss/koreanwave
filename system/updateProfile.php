@@ -9,16 +9,18 @@ if (!isset($_SESSION['user_data'])) {
     exit;
 }
 
-if ($_SESSION['user_data']['role'] === 'student' && 
-    (isset($_POST['action']) && in_array($_POST['action'], ['updateAvatar', 'updatePassword']))) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์ในการดำเนินการนี้']);
-    exit;
-}
-
 $userId = $_SESSION['user_data']['id'];
 
 try {
+    if (!isset($_POST['action'])) {
+        throw new Exception('Missing action parameter');
+    }
+
+    if ($_SESSION['user_data']['role'] === 'student' && 
+        in_array($_POST['action'], ['updatePassword', 'updateAvatar'])) {
+        throw new Exception('ไม่มีสิทธิ์ในการดำเนินการนี้');
+    }
+
     switch ($_POST['action']) {
         case 'updateAvatar':
             if (!isset($_FILES['avatar'])) {
@@ -52,11 +54,9 @@ try {
             break;
 
         case 'updatePersonalInfo':
-            // Get user role from session
             $userRole = $_SESSION['user_data']['role'];
             
             if ($userRole === 'student') {
-                // For students, only allow updating gender and club
                 $sql = "UPDATE users SET gender = ?, club = ? WHERE id = ?";
                 $params = [
                     $_POST['gender'],
@@ -64,7 +64,6 @@ try {
                     $userId
                 ];
             } else {
-                // For teachers and admins, allow updating all fields
                 $sql = "UPDATE users SET 
                     first_name = ?, 
                     last_name = ?, 
@@ -91,21 +90,35 @@ try {
             break;
 
         case 'updatePassword':
+            if (empty($_POST['current_password']) || 
+                empty($_POST['new_password']) || 
+                empty($_POST['confirm_password'])) {
+                throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วน');
+            }
+
             if ($_POST['new_password'] !== $_POST['confirm_password']) {
                 throw new Exception('รหัสผ่านใหม่ไม่ตรงกัน');
             }
 
-            $stmt = $db->prepare("SELECT password FROM users WHERE id = ?");
-            $stmt->execute([$userId]);
-            $user = $stmt->fetch();
+            if (strlen($_POST['new_password']) < 8) {
+                throw new Exception('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+            }
 
-            if (!password_verify($_POST['current_password'], $user['password'])) {
+            $stmt = $db->prepare("SELECT password_hash FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!password_verify($_POST['current_password'], $user['password_hash'])) {
                 throw new Exception('รหัสผ่านปัจจุบันไม่ถูกต้อง');
             }
 
             $newPasswordHash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
-            $stmt = $db->prepare("UPDATE users SET password = ? WHERE id = ?");
-            $stmt->execute([$newPasswordHash, $userId]);
+            $stmt = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+            $success = $stmt->execute([$newPasswordHash, $userId]);
+
+            if (!$success) {
+                throw new Exception('ไม่สามารถอัพเดทรหัสผ่านได้');
+            }
 
             echo json_encode(['success' => true]);
             break;

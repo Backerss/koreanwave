@@ -109,16 +109,78 @@ $(document).ready(function() {
         e.preventDefault();
         if (loadingState) return;
 
-        const formData = {
-            currentPassword: $('input[name="currentPassword"]').val(),
-            newPassword: $('input[name="newPassword"]').val(),
-            confirmPassword: $('input[name="confirmPassword"]').val()
+        const passwordData = {
+            currentPassword: $('input[name="current_password"]').val(),
+            newPassword: $('input[name="new_password"]').val(),
+            confirmPassword: $('input[name="confirm_password"]').val()
         };
 
-        // Validation
-        if (!validatePasswordChange(formData)) return;
+        if (!validatePasswordChange(passwordData)) {
+            return;
+        }
 
-        updatePassword(formData);
+        const formData = new FormData();
+        formData.append('action', 'updatePassword');
+        formData.append('current_password', passwordData.currentPassword);
+        formData.append('new_password', passwordData.newPassword);
+        formData.append('confirm_password', passwordData.confirmPassword);
+
+        loadingState = true;
+        showLoading('กำลังเปลี่ยนรหัสผ่าน...');
+
+        $.ajax({
+            url: '../../system/updateProfile.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                try {
+                    // ตรวจสอบว่า response เป็น string หรือไม่
+                    const result = typeof response === 'string' ? JSON.parse(response) : response;
+                    
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'สำเร็จ',
+                            text: 'เปลี่ยนรหัสผ่านเรียบร้อย'
+                        });
+                        $('#passwordForm')[0].reset();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ผิดพลาด',
+                            text: result.message || 'เกิดข้อผิดพลาด'
+                        });
+                    }
+                } catch (e) {
+                    console.error('Parse error:', e);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'ผิดพลาด',
+                        text: 'เกิดข้อผิดพลาดในการประมวลผลข้อมูล'
+                    });
+                }
+            },
+            error: function(xhr) {
+                let message = 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน';
+                try {
+                    const response = xhr.responseJSON || JSON.parse(xhr.responseText);
+                    message = response.message || message;
+                } catch(e) {
+                    console.error('Error parsing response:', e);
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ผิดพลาด',
+                    text: message
+                });
+            },
+            complete: function() {
+                loadingState = false;
+                hideLoading();
+            }
+        });
     });
 
     // Notification Settings Form Handler
@@ -154,13 +216,18 @@ $(document).ready(function() {
     }
 
     function validatePasswordChange(data) {
-        if (data.newPassword.length < 8) {
-            showToast('error', 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+        if (!data.newPassword || data.newPassword.length < 8) {
+            Swal.fire('ผิดพลาด', 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร', 'error');
             return false;
         }
 
-        if (data.newPassword !== data.confirmPassword) {
-            showToast('error', 'รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
+        if (!data.confirmPassword || data.newPassword !== data.confirmPassword) {
+            Swal.fire('ผิดพลาด', 'รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน', 'error');
+            return false;
+        }
+
+        if (!data.currentPassword) {
+            Swal.fire('ผิดพลาด', 'กรุณากรอกรหัสผ่านปัจจุบัน', 'error');
             return false;
         }
 
