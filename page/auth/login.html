@@ -1,15 +1,11 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ - โรงเรียนสตรีนครสวรรค์</title>
-    <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SweetAlert2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
         :root {
@@ -19,23 +15,43 @@
         }
 
         body {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-blue) 100%);
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-blue));
+            font-family: 'Sarabun', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .login-section {
             min-height: 100vh;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-family: 'Sarabun', sans-serif;
+            position: relative;
+        }
+
+        .login-section::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url('https://admission.sns.ac.th//assets/img/header2.jpg') center/cover;
+            opacity: 0.1;
+            pointer-events: none;
         }
 
         .login-container {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 400px;
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             position: relative;
             overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .login-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
         .login-container::before {
@@ -44,50 +60,77 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 5px;
+            height: 4px;
             background: var(--secondary-color);
         }
 
         .school-logo {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 1.5rem;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
             display: block;
+            animation: fadeInDown 1s ease;
         }
 
-        .form-control {
-            border-radius: 8px;
-            padding: 12px;
-            border: 1px solid #ddd;
+        .form-floating {
+            margin-bottom: 1.5rem;
         }
 
-        .form-control:focus {
+        .form-floating input {
+            border: 2px solid rgba(0, 51, 153, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            height: 60px;
+            transition: all 0.3s ease;
+        }
+
+        .form-floating input:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(0, 51, 153, 0.25);
+            box-shadow: 0 0 0 0.25rem rgba(0, 51, 153, 0.15);
         }
 
-        .input-group-text {
-            background-color: transparent;
-            border-right: none;
-        }
-
-        .form-control {
-            border-left: none;
+        .form-floating label {
+            padding: 1rem;
         }
 
         .btn-login {
-            background-color: var(--primary-color);
+            background: linear-gradient(45deg, var(--primary-color), var(--dark-blue));
             color: white;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 0.8rem;
+            border-radius: 12px;
             font-weight: 500;
             width: 100%;
+            font-size: 1.1rem;
             margin-top: 1rem;
+            border: none;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
 
         .btn-login:hover {
-            background-color: var(--dark-blue);
-            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 51, 153, 0.3);
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .btn-login:hover::before {
+            left: 100%;
         }
 
         .forgot-password {
@@ -96,74 +139,150 @@
             font-size: 0.9rem;
             display: block;
             text-align: center;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
         }
 
         .forgot-password:hover {
             color: var(--dark-blue);
+            transform: translateX(5px);
         }
 
-        .alert {
-            border-radius: 8px;
-            font-size: 0.9rem;
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            z-index: 10;
         }
 
         .loading-screen {
             position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 100%;
-            background: #002266;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-blue));
             display: flex;
-            align-items: center;
-            justify-content: center;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
             z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+
+        .loading-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid var(--secondary-color);
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            margin-top: 1rem;
             color: white;
+            font-size: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .welcome-text {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            animation: fadeInDown 1s ease 0.3s both;
+        }
+
+        .welcome-text h4 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-text p {
+            color: #666;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 
 <body>
-
-    <!-- หน้าโหลด -->
+    <!-- แก้ไขส่วน loading screen ในโค้ด HTML -->
     <div id="loadingScreen" class="loading-screen">
-        <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;"></div>
-        <p class="mt-3">กำลังโหลด...</p>
+        <div class="loading-spinner"></div>
+        <div class="loading-text">กำลังโหลด...</div>
     </div>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <div class="login-container mx-auto">
-                    <img src="https://sns.electivecourses.net/data/img/logo.png" alt="โลโก้โรงเรียน"
-                        class="school-logo">
-                    <h4 class="text-center mb-4">เข้าสู่ระบบ</h4>
-                    <form id="loginForm">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">
-                                <i class="fas fa-user"></i>
-                            </span>
-                            <input type="text" class="form-control" id="username" placeholder="รหัสนักเรียน / อีเมล" required>
+
+    <section class="login-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6 col-xl-5">
+                    <div class="login-container">
+                        <img src="https://sns.electivecourses.net/data/img/logo.png" alt="โลโก้โรงเรียน" class="school-logo">
+                        
+                        <div class="welcome-text">
+                            <h4>ยินดีต้อนรับ</h4>
+                            <p>เข้าสู่ระบบเพื่อเริ่มการเรียนรู้</p>
                         </div>
 
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">
-                                <i class="fas fa-lock"></i>
-                            </span>
-                            <input type="password" class="form-control" id="password" placeholder="รหัสผ่าน" required>
-                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                <i class="fas fa-eye"></i>
+                        <form id="loginForm">
+                            <div class="form-floating mb-4">
+                                <input type="text" class="form-control" id="username" placeholder="รหัสนักเรียน / อีเมล" required>
+                                <label for="username">รหัสนักเรียน / อีเมล</label>
+                            </div>
+
+                            <div class="form-floating mb-4 position-relative">
+                                <input type="password" class="form-control" id="password" placeholder="รหัสผ่าน" required>
+                                <label for="password">รหัสผ่าน</label>
+                                <button type="button" class="toggle-password" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+
+                            <button type="submit" class="btn btn-login">
+                                <i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ
                             </button>
-                        </div>
-
-                        <button type="submit" class="btn btn-login">
-                            <i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ
-                        </button>
-                    </form>
-                    <a href="#" class="forgot-password" id="forgotPassword">ลืมรหัสผ่าน?</a>
+                        </form>
+                        <a href="#" class="forgot-password" id="forgotPassword">
+                            <i class="fas fa-key me-1"></i>ลืมรหัสผ่าน?
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -174,10 +293,18 @@
     <!-- Custom JS -->
 
     <script>
+        // แก้ไขส่วน JavaScript สำหรับ loading screen
         document.addEventListener("DOMContentLoaded", function () {
+            const loadingScreen = document.getElementById("loadingScreen");
+            
+            // เพิ่ม class fade-out หลังจากโหลดเสร็จ
             setTimeout(() => {
-                document.getElementById("loadingScreen").style.display = "none";
-            }, 2000);
+                loadingScreen.classList.add('fade-out');
+                // ลบ element หลังจาก animation เสร็จสิ้น
+                setTimeout(() => {
+                    loadingScreen.remove();
+                }, 500);
+            }, 1500);
         });
     </script>
 
