@@ -3,6 +3,48 @@ window.logsTable;
 $(document).ready(function() {
     initializeLogsTable();
     setupEventHandlers();
+
+    // ฟังก์ชันอัพเดทสถิติ
+    function updateStats() {
+        $.ajax({
+            url: '../../system/getLogsStats.php',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const data = response.data;
+                    
+                    // อัพเดทค่าในแต่ละการ์ด
+                    $('#totalActivities').text(data.totalActivities);
+                    $('#activeUsers').text(data.activeUsers);
+                    $('#todayActivities').text(data.todayActivities);
+                    $('#avgActivities').text(data.avgActivities);
+                    
+                    // เพิ่มเอฟเฟคการอัพเดท
+                    $('.stats-card').addClass('updated');
+                    setTimeout(() => {
+                        $('.stats-card').removeClass('updated');
+                    }, 500);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching stats:', error);
+            }
+        });
+    }
+
+    // อัพเดทสถิติเมื่อโหลดหน้า
+    updateStats();
+
+    // อัพเดทสถิติเมื่อกดปุ่มรีเฟรช
+    $('#refreshLogs').click(function() {
+        updateStats();
+        if (typeof logsTable !== 'undefined') {
+            logsTable.ajax.reload();
+        }
+    });
+
+    // อัพเดทสถิติทุก 5 นาที
+    setInterval(updateStats, 300000);
 });
 
 function initializeLogsTable() {
