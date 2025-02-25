@@ -1848,3 +1848,80 @@ footer {
     font-size: 0.8rem;
   }
 }
+
+/* Learning Process Section Styles */
+#learning-process {
+    background-color: #f8f9fa;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-line {
+    position: absolute;
+    top: 30%;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #e9ecef 50%, #dee2e6 50%);
+    background-size: 20px 3px;
+    z-index: 0;
+}
+
+.process-card {
+    transition: all 0.3s ease;
+    z-index: 1;
+}
+
+.process-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+}
+
+.process-number {
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #f8f9fa;
+    line-height: 1;
+    -webkit-text-stroke: 2px #dee2e6;
+}
+
+.icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+}
+
+.process-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.process-features li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.section-header .badge {
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@media (max-width: 768px) {
+    .progress-line {
+        display: none;
+    }
+    
+    .process-card {
+        margin-bottom: 2rem;
+    }
+}

@@ -34,7 +34,7 @@ $systemStats = require 'system/getStats.php';
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <img src="https://placehold.co/40" alt="โลโก้โรงเรียน" class="school-logo me-2">
+                <img src="https://sns.electivecourses.net/data/img/logo.png" width="40" alt="โลโก้โรงเรียน" class="school-logo me-2">
                 โรงเรียนสตรีนครสวรรค์
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
