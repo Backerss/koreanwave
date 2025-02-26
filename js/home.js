@@ -220,29 +220,42 @@ $(document).ready(function () {
             $('.main-content').toggleClass('sidebar-hidden');
         });
 
-        // Page navigation
+        // ลบ event handler เดิมทั้งหมด
+        $('.sidebar-menu li').off('click');
+        
+        // สร้าง event handler ใหม่ที่รวมการทำงานทั้งหมด
         $('.sidebar-menu li').on('click', async function(e) {
             try {
                 const targetPage = $(this).data('page');
                 if (!targetPage) return;
 
-                if ($('#lessonPage').hasClass('active')) {
+                // เช็คว่าอยู่ในหน้าบทเรียนหรือไม่
+                if ($('#lessonPage').is(':visible')) {
                     e.preventDefault();
-                    const result = await Swal.fire({
-                        title: 'ออกจากบทเรียน?',
-                        text: 'คุณกำลังอยู่ในบทเรียน ต้องการออกจากบทเรียนใช่หรือไม่?',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'ใช่',
-                        cancelButtonText: 'ไม่',
-                        confirmButtonColor: '#dc3545'
-                    });
+                    
+                    // ใช้ confirmLeavePage จาก lesson.js
+                    if (typeof window.confirmLeavePage === 'function') {
+                        window.confirmLeavePage(() => {
+                            NavigationHandler.navigate($(this), targetPage);
+                        });
+                    } else {
+                        // Fallback ถ้าไม่มีฟังก์ชัน confirmLeavePage
+                        const result = await Swal.fire({
+                            title: 'ออกจากบทเรียน?',
+                            text: 'คุณกำลังอยู่ในบทเรียน ต้องการออกจากบทเรียนใช่หรือไม่?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'ใช่',
+                            cancelButtonText: 'ไม่',
+                            confirmButtonColor: '#dc3545'
+                        });
 
-                    if (result.isConfirmed) {
-                        await NavigationHandler.navigate($(this), targetPage);
+                        if (result.isConfirmed) {
+                            NavigationHandler.navigate($(this), targetPage);
+                        }
                     }
                 } else {
-                    await NavigationHandler.navigate($(this), targetPage);
+                    NavigationHandler.navigate($(this), targetPage);
                 }
             } catch (error) {
                 Logger.error('Navigation Click', error);
@@ -328,6 +341,11 @@ $(document).ready(function () {
             });
         }
     };
+
+    // เพิ่มฟังก์ชันเช็คว่าต้องแสดง confirm dialog หรือไม่เมื่อเปลี่ยนหน้า
+    function shouldConfirmPageChange() {
+        return $('#lessonPage').is(':visible');
+    }
 
     // Initialize application
     try {

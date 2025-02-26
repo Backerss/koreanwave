@@ -69,7 +69,7 @@ $systemStats = require 'system/getStats.php';
                     บทเรียนภาษาเกาหลี<br>ออนไลน์
                     </h1>
                     <p class="hero-subtitle animation-fadeInUp animation-delay-1">
-                        พัฒนาทักษะภาษาเกาหลีของคุณกับระบบการเรียนการสอนที่ทันสมัย 
+                        เพื่อพัฒนาทักษะภาษาเกาหลีของคุณกับระบบการเรียนการสอนที่ทันสมัย 
                         พร้อมด้วยบทเรียนมาตรฐานและการติดตามผลการเรียนรู้อย่างมีประสิทธิภาพ
                     </p>
                     <div class="hero-buttons animation-fadeInUp animation-delay-2">
@@ -245,7 +245,7 @@ $systemStats = require 'system/getStats.php';
                             <h3><?= htmlspecialchars($course['title']) ?></h3>
                             <div class="course-meta">
                                 <span><i class="fas fa-users"></i> <?= $course['student_count'] ?> นักเรียน</span>
-                                <span><i class="fas fa-clock"></i> 30 ชั่วโมง</span>
+                                <span><i class="fas fa-clock"></i> 20 นาที</span>
                             </div>
                             <a href="page/auth/login.html" class="btn btn-primary btn-sm mt-3">
                                 ดูรายละเอียด

@@ -2,6 +2,9 @@
 window.currentVocabIndex = window.currentVocabIndex || 0;
 window.vocabularyList = window.vocabularyList || [];
 window.audioPlayer = window.audioPlayer || null;
+// เพิ่มตัวแปรสำหรับการติดตามเวลา
+window.vocabStartTime = null;
+window.vocabId = null;
 
 function startLesson(lessonId) {
     $.ajax({
@@ -189,6 +192,9 @@ function setupVocabNavigation(totalVocab) {
 function navigateVocab(direction, totalVocab) {
     const previousIndex = window.currentVocabIndex;
     
+    // บันทึกเวลาที่ใช้กับคำศัพท์ปัจจุบันก่อนเปลี่ยน
+    recordVocabTime();
+    
     // อัพเดท current index ตามทิศทาง
     if (direction === 'prev' && window.currentVocabIndex > 0) {
         window.currentVocabIndex--;
@@ -243,18 +249,22 @@ function updateNavigationState() {
 }
 
 function updateLessonPage(lesson, vocabulary, totalVocab) {
+    // บันทึกเวลาก่อนที่จะโหลดคำศัพท์ใหม่
+    recordVocabTime();
+    
     if (lesson) {
         $('.lesson-header-card h3').text(`บทเรียนที่ ${lesson.id}: ${lesson.title}`);
     }
-
-
-
+    
     $('.lesson-main-image').attr('src', vocabulary.img_url ? `../../data/images/${vocabulary.img_url}` : 'https://placehold.co/800x600');
     $('.lesson-text-content h4').text(vocabulary.word_kr);
     $('.lesson-text-content .lesson-description').text(vocabulary.deteil_word);
 
     $('.pronunciation-item .korean').text(vocabulary.word_kr);
     $('.pronunciation-item .romanized').text(vocabulary.word_en);
+    
+    // เริ่มจับเวลาสำหรับคำศัพท์ปัจจุบัน
+    startVocabTimer(vocabulary.id);
 
     // แก้ไขส่วนการตั้งค่า audio player
     if (vocabulary.audio_url && vocabulary.audio_url.trim() !== '') {
@@ -482,15 +492,123 @@ function checkAndLoadLesson() {
     }
 }
 
+// เพิ่มฟังก์ชันสำหรับเริ่มจับเวลา
+function startVocabTimer(vocabId) {
+    window.vocabStartTime = new Date();
+    window.vocabId = vocabId;
+    console.log(`เริ่มจับเวลาสำหรับคำศัพท์ ID: ${vocabId}`);
+}
+
+// เพิ่มฟังก์ชันสำหรับบันทึกเวลาที่ใช้
+function recordVocabTime() {
+    if (!window.vocabStartTime || !window.vocabId) return;
+    
+    const timeSpent = Math.floor((new Date() - window.vocabStartTime) / 1000); // เวลาเป็นวินาที
+    
+    // บันทึกเวลาเฉพาะเมื่อใช้เวลามากกว่า 1 วินาที
+    if (timeSpent > 1) {
+        $.ajax({
+            url: '../../system/checkLearn.php',
+            type: 'POST',
+            data: {
+                action: 'recordVocabTime',
+                lessonId: window.currentLessonId,
+                vocabId: window.vocabId,
+                timeSpent: timeSpent
+            },
+            success: function(response) {
+                console.log(`บันทึกเวลา ${timeSpent} วินาที สำหรับคำศัพท์ ID ${window.vocabId}`);
+            },
+            error: function(xhr, status, error) {
+                console.error('ไม่สามารถบันทึกเวลาได้:', error);
+            }
+        });
+    }
+}
+
+// แก้เป็น window function เพื่อให้เรียกใช้จากภายนอกได้
+window.confirmLeavePage = function(callback) {
+    Swal.fire({
+        title: 'ออกจากบทเรียน?',
+        text: 'คุณกำลังอยู่ในบทเรียน ต้องการออกจากบทเรียนใช่หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ใช่',
+        cancelButtonText: 'ไม่',
+        confirmButtonColor: '#dc3545'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // บันทึกเวลาก่อนออกจากหน้า
+            recordVocabTime();
+            
+            // เรียกฟังก์ชัน callback หากมีการยืนยัน
+            if (typeof callback === 'function') {
+                callback();
+            }
+        }
+    });
+}
+
 $(document).ready(function() {
     // เช็คว่ามีการเปลี่ยนแปลง URL หรือไม่
     $(window).on('hashchange', function() {
         checkAndLoadLesson();
     });
-
+    
+    // บันทึกเวลาเมื่อออกจากหน้าเว็บ
+    $(window).on('beforeunload', function() {
+        recordVocabTime();
+    });
+    
+    // ตรวจสอบการเปลี่ยนแท็บ
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            // บันทึกเวลาเมื่อเปลี่ยนแท็บหรือออกจากหน้า
+            recordVocabTime();
+        } else if (document.visibilityState === 'visible' && window.vocabId) {
+            // เริ่มจับเวลาใหม่เมื่อกลับมาที่หน้า
+            window.vocabStartTime = new Date();
+        }
+    });
     
     // โหลดบทเรียนเมื่อเปิดหน้าครั้งแรก
     if ($('#lessonPage').length > 0 && window.currentLessonId) {
         loadLessonContent(window.currentLessonId);
     }
+    
+    // เก็บแค่ส่วนจัดการ dropdown และอื่นๆ
+    $('.nav-right .dropdown-menu li, .breadcrumb span').on('click', function(e) {
+        if ($('#lessonPage').is(':visible')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const $this = $(this);
+            const targetPage = $this.data('page') || $this.attr('href');
+            
+            window.confirmLeavePage(function() {
+                // หากผู้ใช้ยืนยัน ให้นำทางไปยังหน้าที่ต้องการ
+                if ($this.data('page')) {
+                    // สำหรับ sidebar menu items
+                    $('.page').hide();
+                    $(`#${targetPage}Page`).show();
+                    $('.sidebar-menu li').removeClass('active');
+                    $this.addClass('active');
+                    $('#currentPage').text($this.find('span').text());
+                } else if ($this.attr('href')) {
+                    // สำหรับลิงก์ปกติ
+                    window.location.href = $this.attr('href');
+                }
+            });
+        }
+    });
+    
+    // จัดการการกดลิงก์ออกจากระบบเมื่ออยู่ในหน้าบทเรียน
+    $('#logoutBtn').on('click', function(e) {
+        if ($('#lessonPage').is(':visible')) {
+            e.preventDefault();
+            window.confirmLeavePage(function() {
+                window.location.href = $('#logoutBtn').attr('href');
+            });
+        }
+    });
 });

@@ -303,4 +303,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ]);
     }
 }
+
+// เพิ่มการจัดการบันทึกเวลา
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'recordVocabTime') {
+    $lessonId = $_POST['lessonId'];
+    $vocabId = $_POST['vocabId'];
+    $timeSpent = intval($_POST['timeSpent']);
+    $userId = $_SESSION['user_data']['id'];
+
+    try {
+        // อัปเดตเวลาเรียนรวมในตาราง learning_progress
+        $stmt = $db->prepare("
+            UPDATE learning_progress 
+            SET time_spent = time_spent + ?, 
+                last_accessed = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND lesson_id = ?
+        ");
+        $stmt->execute([$timeSpent, $userId, $lessonId]);
+        
+        // บันทึกข้อมูลเพิ่มเติมในตาราง vocabulary_time_log (optional)
+        $stmt = $db->prepare("
+            INSERT INTO vocabulary_time_log 
+            (user_id, lesson_id, vocabulary_id, time_spent, recorded_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ");
+        $stmt->execute([$userId, $lessonId, $vocabId, $timeSpent]);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'บันทึกเวลาเรียบร้อย'
+        ]);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
 ?>
