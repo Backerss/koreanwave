@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 24, 2025 at 03:02 PM
+-- Generation Time: Feb 28, 2025 at 09:49 PM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -206,6 +206,21 @@ CREATE TABLE `vocabulary` (
   `img_url` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `vocabulary_time_log`
+--
+
+CREATE TABLE `vocabulary_time_log` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `lesson_id` int NOT NULL,
+  `vocabulary_id` int NOT NULL,
+  `time_spent` int NOT NULL,
+  `recorded_at` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 --
 -- Indexes for dumped tables
 --
@@ -288,6 +303,13 @@ ALTER TABLE `vocabulary`
   ADD KEY `lesson_id` (`lesson_id`);
 
 --
+-- Indexes for table `vocabulary_time_log`
+--
+ALTER TABLE `vocabulary_time_log`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`,`lesson_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -355,6 +377,12 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `vocabulary`
 --
 ALTER TABLE `vocabulary`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `vocabulary_time_log`
+--
+ALTER TABLE `vocabulary_time_log`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
