@@ -294,24 +294,11 @@ $systemStats = require 'system/getStats.php';
                 <div class="col-lg-6">
                     <div class="school-image-wrapper animation-fadeInRight">
                         <div class="school-image">
-                            <img src="https://placehold.co/600x400" 
+                            <img src="https://lh3.googleusercontent.com/proxy/IZ5dLE6QPPrXl1Ga-In6JSIq5kGSjPGZyXLfOPAE8voj37Bh0WT-0N8atEULYb3oD9LKXOojpC9N9DDAkhnMNt9EC24zdk_o7O8" 
                                  alt="โรงเรียนสตรีนครสวรรค์" 
                                  class="img-fluid">
                         </div>
-                        <div class="school-stats">
-                            <div class="school-stat-item">
-                                <h4>50+</h4>
-                                <p>ปีแห่งความเชี่ยวชาญ</p>
-                            </div>
-                            <div class="school-stat-item">
-                                <h4>100+</h4>
-                                <p>ครูผู้สอน</p>
-                            </div>
-                            <div class="school-stat-item">
-                                <h4>95%</h4>
-                                <p>ความพึงพอใจ</p>
-                            </div>
-                        </div>
+                        
                     </div>
                 </div>
             </div>
