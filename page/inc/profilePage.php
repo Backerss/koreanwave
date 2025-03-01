@@ -1,4 +1,5 @@
 <?php
+
 // ดึงข้อมูลผู้ใช้และสถิติการเรียน
 $userId = $_SESSION['user_data']['id'];
 $userQuery = $db->prepare("
@@ -48,7 +49,7 @@ $progressPercentage = ($userData['lessons_accessed'] / max($userData['total_less
                 <div class="profile-card">
                     <div class="profile-header">
                         <div class="profile-avatar-wrapper">
-                            <img src="<?php echo $userData['avatar_url'] ?? 'https://placehold.co/150'; ?>" 
+                            <img src="<?php echo !empty($userData['profile_img']) ? '../../' . $userData['profile_img'] : 'https://placehold.co/150'; ?>" 
                                  alt="Profile" 
                                  id="profileAvatar">
                             <?php if ($userData['role'] !== 'student'): ?>

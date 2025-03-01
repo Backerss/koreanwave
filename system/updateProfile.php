@@ -11,6 +11,42 @@ if (!isset($_SESSION['user_data'])) {
 
 $userId = $_SESSION['user_data']['id'];
 
+// Handle GET requests
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_GET['action']) && $_GET['action'] === 'getProfileData') {
+        // Get user ID from session
+        $userId = $_SESSION['user_id']; // Adjust based on your session variable name
+        
+        try {
+            // Query to get user profile data
+            $stmt = $db->prepare("SELECT id, profile_img, avatar_url FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($userData) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'data' => $userData
+                ]);
+            } else {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ไม่พบข้อมูลผู้ใช้'
+                ]);
+            }
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'เกิดข้อผิดพลาดในการดึงข้อมูล: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+}
+
 try {
     if (!isset($_POST['action'])) {
         throw new Exception('Missing action parameter');
@@ -34,7 +70,8 @@ try {
                 throw new Exception('รองรับเฉพาะไฟล์รูปภาพ (JPEG, PNG, GIF)');
             }
 
-            $uploadDir = '../uploads/avatars/';
+            // Change directory to data/avatars
+            $uploadDir = '../data/avatars/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
             }
@@ -43,11 +80,15 @@ try {
             $filePath = $uploadDir . $fileName;
 
             if (move_uploaded_file($file['tmp_name'], $filePath)) {
-                $stmt = $db->prepare("UPDATE users SET avatar_url = ? WHERE id = ?");
-                $avatarUrl = 'uploads/avatars/' . $fileName;
-                $stmt->execute([$avatarUrl, $userId]);
+                // Update query to use profile_img field instead of avatar_url
+                $stmt = $db->prepare("UPDATE users SET profile_img = ? WHERE id = ?");
+                $avatarPath = 'data/avatars/' . $fileName;
+                $stmt->execute([$avatarPath, $userId]);
 
-                echo json_encode(['success' => true, 'avatar_url' => $avatarUrl]);
+                // Update session data
+                $_SESSION['user_data']['profile_img'] = $avatarPath;
+                
+                echo json_encode(['success' => true, 'avatar_url' => $avatarPath]);
             } else {
                 throw new Exception('ไม่สามารถอัพโหลดไฟล์ได้');
             }

@@ -1,53 +1,8 @@
 $(document).ready(function() {
-    // Avatar Upload Handler
-    $('#avatarUpload').change(function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                $('#profileAvatar').attr('src', e.target.result);
-            }
-            
-            reader.readAsDataURL(e.target.files[0]);
-
-            // Here you would typically upload the file to your server
-            const formData = new FormData();
-            formData.append('avatar', e.target.files[0]);
-
-            // Example API call
-            // $.ajax({
-            //     url: '/api/profile/avatar',
-            //     type: 'POST',
-            //     data: formData,
-            //     processData: false,
-            //     contentType: false,
-            //     success: function(response) {
-            //         showToast('success', 'อัพโหลดรูปโปรไฟล์สำเร็จ');
-            //     },
-            //     error: function() {
-            //         showToast('error', 'เกิดข้อผิดพลาดในการอัพโหลด');
-            //     }
-            // });
-        }
-    });
-
-    // Personal Info Form Handler
-    $('#personalInfoForm').submit(function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            firstName: $('input[name="firstName"]').val(),
-            lastName: $('input[name="lastName"]').val(),
-            email: $('input[name="email"]').val(),
-            phone: $('input[name="phone"]').val(),
-            address: $('textarea[name="address"]').val()
-        };
-    });
-});
-
-
-$(document).ready(function() {
     let loadingState = false;
+
+    // Initialize page - load user data including avatar
+    initializeProfile();
 
     // Avatar Upload Handler
     $('#avatarUpload').change(function(e) {
@@ -240,13 +195,49 @@ $(document).ready(function() {
             loadingState = true;
             showLoading('กำลังอัพโหลดรูปภาพ...');
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Add the action parameter for the API
+            formData.append('action', 'updateAvatar');
             
-            showToast('success', 'อัพโหลดรูปโปรไฟล์สำเร็จ');
+            // Make the actual AJAX call to the server
+            $.ajax({
+                url: '../../system/updateProfile.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Update the avatar image in the UI
+                        if (response.avatar_url) {
+                            $('#profileAvatar').attr('src', '../../' + response.avatar_url);
+                        }
+                        showToast('success', 'อัพโหลดรูปโปรไฟล์สำเร็จ');
+                    } else {
+                        showToast('error', response.message || 'เกิดข้อผิดพลาดในการอัพโหลด');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error uploading avatar:', error);
+                    let errorMessage = 'เกิดข้อผิดพลาดในการอัพโหลด';
+                    
+                    try {
+                        const response = xhr.responseJSON || JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch(e) {
+                        console.error('Error parsing response:', e);
+                    }
+                    
+                    showToast('error', errorMessage);
+                },
+                complete: function() {
+                    loadingState = false;
+                    hideLoading();
+                }
+            });
         } catch (error) {
+            console.error('Avatar upload error:', error);
             showToast('error', 'เกิดข้อผิดพลาดในการอัพโหลด');
-        } finally {
             loadingState = false;
             hideLoading();
         }
@@ -422,4 +413,47 @@ $(document).ready(function() {
 
     // Initial Tab Navigation
     handleTabNavigation();
+
+    // Initialize profile page
+    function initializeProfile() {
+        // Check if we already have the avatar URL from PHP
+        const profileAvatar = $('#profileAvatar');
+        if (profileAvatar.attr('src') && profileAvatar.attr('src') !== 'https://placehold.co/150') {
+            // Avatar already set via PHP, no need to fetch
+            return;
+        }
+
+        // Use the updateProfile.php endpoint with a GET method instead
+        $.ajax({
+            url: '../../system/updateProfile.php',
+            type: 'GET',
+            data: { action: 'getProfileData' },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    // First check avatar_url, then profile_img (based on your DB structure)
+                    const avatarPath = response.data.avatar_url || response.data.profile_img;
+                    if (avatarPath) {
+                        // Check if path already starts with uploads/ or includes ../
+                        if (avatarPath.startsWith('uploads/') || avatarPath.includes('../')) {
+                            $('#profileAvatar').attr('src', '../../' + avatarPath);
+                        } else {
+                            $('#profileAvatar').attr('src', avatarPath);
+                        }
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Profile data load error:', status, error);
+                // Check if we can parse the error response
+                try {
+                    const errorData = JSON.parse(xhr.responseText);
+                    console.error('Error details:', errorData);
+                } catch (e) {
+                    // If not JSON, log the raw response
+                    console.error('Raw response:', xhr.responseText.substring(0, 100) + '...');
+                }
+            }
+        });
+    }
 });
