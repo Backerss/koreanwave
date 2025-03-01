@@ -53,7 +53,7 @@ $completionPercentage = $totalLessons > 0 ?
             <?php foreach ($lessons as $lesson): ?>
                 <div class="col-md-4 mb-4">
                     <div class="card lesson-card">
-                        <img src="<?php echo htmlspecialchars($lesson['image_url'] ?? 'https://placehold.co/400x200'); ?>"
+                        <img src="../../data/course_img/<?php echo htmlspecialchars($lesson['cover_img'] ?? 'https://placehold.co/400x300'); ?>"
                             class="card-img-top" alt="<?php echo htmlspecialchars($lesson['title']); ?>">
                         <div class="card-body">
                             <h5 class="card-title"><?php echo htmlspecialchars($lesson['title']); ?></h5>

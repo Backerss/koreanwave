@@ -41,6 +41,36 @@ function checkDuplicateTitle($db, $title, $id = null) {
     }
 }
 
+// เพิ่มฟังก์ชันสำหรับจัดการรูปภาพ
+function handleCoverImage($file) {
+    if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+        return null;
+    }
+
+    // ตรวจสอบขนาดไฟล์
+    if ($file['size'] > 10 * 1024 * 1024) {
+        throw new Exception('ขนาดไฟล์ต้องไม่เกิน 10MB');
+    }
+
+    // ตรวจสอบประเภทไฟล์
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!in_array($file['type'], $allowedTypes)) {
+        throw new Exception('รองรับเฉพาะไฟล์ภาพ JPG, PNG และ GIF เท่านั้น');
+    }
+
+    // สร้างชื่อไฟล์ใหม่
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $newFilename = uniqid() . '.' . $extension;
+    $uploadPath = __DIR__ . '/../data/course_img/' . $newFilename;
+
+    // อัพโหลดไฟล์
+    if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+        throw new Exception('ไม่สามารถอัพโหลดไฟล์ได้');
+    }
+
+    return $newFilename;
+}
+
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (!isset($_GET['action']) || $_GET['action'] !== 'get') {
@@ -89,13 +119,18 @@ try {
                 sendError('มีบทเรียนชื่อนี้อยู่แล้ว');
             }
 
+            $coverImg = null;
+            if (isset($_FILES['cover_image'])) {
+                $coverImg = handleCoverImage($_FILES['cover_image']);
+            }
+
             $db->beginTransaction();
             try {
                 $stmt = $db->prepare("
-                    INSERT INTO lessons (title, category, created_at) 
-                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                    INSERT INTO lessons (title, category, cover_img, created_at) 
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
                 ");
-                $success = $stmt->execute([$_POST['title'], $_POST['category']]);
+                $success = $stmt->execute([$_POST['title'], $_POST['category'], $coverImg]);
                 $newId = $db->lastInsertId();
                 
                 $db->commit();
@@ -120,16 +155,35 @@ try {
                         sendError('มีบทเรียนชื่อนี้อยู่แล้ว');
                     }
 
-                    $stmt = $db->prepare("
-                        UPDATE lessons 
-                        SET title = ?, category = ?, updated_at = CURRENT_TIMESTAMP 
-                        WHERE id = ?
-                    ");
-                    $success = $stmt->execute([
-                        $_POST['title'],
-                        $_POST['category'],
-                        $_POST['id']
-                    ]);
+                    $coverImg = null;
+                    if (isset($_FILES['cover_image'])) {
+                        $coverImg = handleCoverImage($_FILES['cover_image']);
+                        
+                        // ลบรูปภาพเก่า
+                        $stmt = $db->prepare("SELECT cover_img FROM lessons WHERE id = ?");
+                        $stmt->execute([$_POST['id']]);
+                        $oldImage = $stmt->fetchColumn();
+                        if ($oldImage) {
+                            $oldPath = __DIR__ . '/../data/course_img/' . $oldImage;
+                            if (file_exists($oldPath)) {
+                                unlink($oldPath);
+                            }
+                        }
+                    }
+
+                    $sql = "UPDATE lessons SET title = ?, category = ?";
+                    $params = [$_POST['title'], $_POST['category']];
+                    
+                    if ($coverImg) {
+                        $sql .= ", cover_img = ?";
+                        $params[] = $coverImg;
+                    }
+                    
+                    $sql .= " WHERE id = ?";
+                    $params[] = $_POST['id'];
+
+                    $stmt = $db->prepare($sql);
+                    $success = $stmt->execute($params);
                     
                     if ($success) {
                         echo json_encode([

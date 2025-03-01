@@ -135,9 +135,16 @@ const CourseManager = {
     },
 
     createCourseCard(course) {
+        // กำหนด URL รูปภาพ
+        const imageUrl = course.cover_img 
+            ? `../../data/course_img/${course.cover_img}`
+            : `https://placehold.co/400x300/1a237e/ffffff?text=${encodeURIComponent(course.title)}`;
+
         return `
             <div class="col-md-4 mb-4">
                 <div class="card course-card">
+                    <img src="${imageUrl}" class="card-img-top" alt="${course.title}" 
+                         style="height: 200px; object-fit: cover;">
                     <div class="card-body">
                         <h5 class="card-title">${course.title}</h5>
                         <span class="category-badge mb-3">
@@ -335,16 +342,84 @@ function getCategoryName(category) {
     return categories[category] || category;
 }
 
+// เพิ่มฟังก์ชันตรวจสอบรูปภาพ
+function validateImage(file) {
+    // ตรวจสอบขนาดไฟล์ (10MB = 10 * 1024 * 1024 bytes)
+    if (file.size > 10 * 1024 * 1024) {
+        throw new Error('ขนาดไฟล์ต้องไม่เกิน 10MB');
+    }
+
+    // ตรวจสอบประเภทไฟล์
+    if (!file.type.match('image.*')) {
+        throw new Error('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+    }
+}
+
+// อัพเดทฟังก์ชัน editCourse
 function editCourse(id) {
     $.get('../../system/manageCourses.php', { action: 'get', id: id }, function(response) {
-        const form = $('#editCourseForm');
-        form.find('[name="id"]').val(response.course.id);
-        form.find('[name="title"]').val(response.course.title);
-        form.find('[name="category"]').val(response.course.category);
-        
-        $('#editCourseModal').modal('show');
+        if (response.success) {
+            const form = $('#editCourseForm');
+            const course = response.course;
+            
+            // เติมข้อมูลในฟอร์ม
+            form.find('[name="id"]').val(course.id);
+            form.find('[name="title"]').val(course.title);
+            form.find('[name="category"]').val(course.category);
+            
+            // แสดงรูปภาพปกปัจจุบัน
+            const currentCoverImage = $('#currentCoverImage');
+            if (course.cover_img) {
+                currentCoverImage.html(`
+                    <img src="../../data/course_img/${course.cover_img}" 
+                         class="img-thumbnail mt-2" style="max-height: 150px">
+                `);
+            } else {
+                currentCoverImage.html(`
+                    <img src="https://placehold.co/400x300/1a237e/ffffff?text=${encodeURIComponent(course.title)}" 
+                         class="img-thumbnail mt-2" style="max-height: 150px">
+                `);
+            }
+            
+            $('#editCourseModal').modal('show');
+        }
     });
 }
+
+// อัพเดท event handler สำหรับการบันทึก
+$('#saveCourseBtn, #updateCourseBtn').on('click', async function(e) {
+    e.preventDefault();
+    const isEdit = this.id === 'updateCourseBtn';
+    const form = isEdit ? '#editCourseForm' : '#addCourseForm';
+    const modal = isEdit ? '#editCourseModal' : '#addCourseModal';
+    
+    try {
+        const formData = new FormData($(form)[0]);
+        const imageFile = formData.get('cover_image');
+        
+        if (imageFile && imageFile.size > 0) {
+            validateImage(imageFile);
+        }
+        
+        formData.append('action', isEdit ? 'update' : 'add');
+        
+        const response = await $.ajax({
+            url: '../../system/manageCourses.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false
+        });
+
+        if (response.success) {
+            $(modal).modal('hide');
+            loadCourses();
+            Swal.fire('สำเร็จ', isEdit ? 'แก้ไขบทเรียนเรียบร้อย' : 'เพิ่มบทเรียนเรียบร้อย', 'success');
+        }
+    } catch (error) {
+        Swal.fire('ผิดพลาด', error.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+    }
+});
 
 function deleteCourse(id) {
     Swal.fire({

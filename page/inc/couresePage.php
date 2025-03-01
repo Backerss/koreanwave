@@ -45,6 +45,11 @@
                                 <option value="meats">เนื้อสัตว์</option>
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">รูปภาพปก</label>
+                            <input type="file" class="form-control" name="cover_image" accept="image/*">
+                            <div class="form-text">ขนาดแนะนำ 400x300 pixel, ไม่เกิน 10MB</div>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -77,6 +82,12 @@
                                 <option value="fruits">ผลไม้</option>
                                 <option value="meats">เนื้อสัตว์</option>
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">รูปภาพปก</label>
+                            <input type="file" class="form-control" name="cover_image" accept="image/*">
+                            <div class="form-text">ขนาดแนะนำ 400x300 pixel, ไม่เกิน 10MB</div>
+                            <div id="currentCoverImage" class="mt-2"></div>
                         </div>
                     </form>
                 </div>

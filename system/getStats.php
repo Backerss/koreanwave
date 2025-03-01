@@ -23,6 +23,7 @@ function getSystemStats() {
         // ดึงข้อมูลคอร์สล่าสุด
         $latestCourses = $db->query("
             SELECT l.*, 
+                   l.cover_img,
                    (SELECT COUNT(*) FROM learning_progress WHERE lesson_id = l.id) as student_count
             FROM lessons l
             ORDER BY l.created_at DESC

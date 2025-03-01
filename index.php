@@ -234,11 +234,27 @@ $systemStats = require 'system/getStats.php';
                 <div class="col-md-4">
                     <div class="course-card">
                         <div class="course-image">
-                            <img src="https://placehold.co/400x300/1a237e/ffffff?text=Course:+<?= urlencode($course['title']) ?>" 
+                            <?php
+                            // ตรวจสอบและกำหนด URL ของรูปภาพ
+                            $imageUrl = $course['cover_img'] 
+                                ? "data/course_img/" . htmlspecialchars($course['cover_img'])
+                                : "https://placehold.co/400x300/1a237e/ffffff?text=" . urlencode($course['title']);
+                            ?>
+                            <img src="<?= $imageUrl ?>" 
                                  alt="<?= htmlspecialchars($course['title']) ?>" 
                                  class="img-fluid">
                             <div class="course-overlay">
-                                <span class="category"><?= htmlspecialchars($course['category']) ?></span>
+                                <span class="category">
+                                    <?php
+                                    // แปลงค่า category เป็นภาษาไทย
+                                    $categories = [
+                                        'vegetables' => 'ผัก',
+                                        'fruits' => 'ผลไม้',
+                                        'meats' => 'เนื้อสัตว์'
+                                    ];
+                                    echo htmlspecialchars($categories[$course['category']] ?? $course['category']);
+                                    ?>
+                                </span>
                             </div>
                         </div>
                         <div class="course-content">
